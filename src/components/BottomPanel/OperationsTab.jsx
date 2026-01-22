@@ -16,6 +16,8 @@ export function OperationsTab({
     removeDuplicateBarcodes: false,
     swapCommasToDots: false,
     autoUpdateBarKod: false,
+    formatColAndMpPrice2Dec: false,
+    autoUpdatePrice: false,
   });
 
   const [processing, setProcessing] = useState(false);
@@ -38,12 +40,18 @@ export function OperationsTab({
         mappings: columnMappings,
       });
 
-      onPreviewUpdate(result.table, result.changedCells, result.missingBarcodes);
+      onPreviewUpdate(
+        result.table,
+        result.changedCells,
+        result.missingBarcodes,
+        result.exportStr,
+      );
 
       // Log results
-      if (result.logs) {
-        result.logs.forEach((log) => onLogMessage(log));
-      }
+      // if (result.logs) {
+      //   result.logs.forEach((log) => onLogMessage(log));
+      // }
+      onLogMessage("Updated " + result.logs + " cells");
     } catch (e) {
       onLogMessage(`Error: ${e}`);
     } finally {
@@ -53,13 +61,13 @@ export function OperationsTab({
 
   const handleSave = async () => {
     const path = await save({
-      filters: [{ name: "Excel", extensions: ["xlsx"] }],
-      defaultPath: "output.xlsx",
+      filters: [{ name: "Data File", extensions: ["dat"] }],
+      defaultPath: "output.dat",
     });
 
     if (path) {
       try {
-        await invoke("save_table", { path });
+        await invoke("export_file", { path });
         onLogMessage(`Saved to ${path}`);
       } catch (e) {
         onLogMessage(`Failed to save: ${e}`);
@@ -68,11 +76,41 @@ export function OperationsTab({
   };
 
   const operationsList = [
-    { key: "updateNames", label: "Update names from Sifrarnik", requiresSifrarnik: true },
-    { key: "formatPrice4Dec", label: "Format prices to 4 decimals", requiresSifrarnik: false },
-    { key: "removeDuplicateBarcodes", label: "Remove duplicate barcodes", requiresSifrarnik: false },
-    { key: "swapCommasToDots", label: "Swap commas to dots", requiresSifrarnik: false },
-    { key: "autoUpdateBarKod", label: "Auto-update barcodes (opens panel for missing)", requiresSifrarnik: true },
+    {
+      key: "updateNames",
+      label: "Update names from Sifrarnik",
+      requiresSifrarnik: true,
+    },
+    {
+      key: "formatPrice4Dec",
+      label: "Format prices to 4 decimals",
+      requiresSifrarnik: false,
+    },
+    {
+      key: "formatColAndMpPrice2Dec",
+      label: "Format quantity and MP price to 2 decimals",
+      requiresSifrarnik: false,
+    },
+    {
+      key: "removeDuplicateBarcodes",
+      label: "Remove duplicate barcodes",
+      requiresSifrarnik: false,
+    },
+    {
+      key: "autoUpdateBarKod",
+      label: "Auto-update barcodes (opens panel for missing)",
+      requiresSifrarnik: true,
+    },
+    {
+      key: "swapCommasToDots",
+      label: "Swap commas to dots",
+      requiresSifrarnik: false,
+    },
+    {
+      key: "autoUpdatePrice",
+      label: "Auto-update prices with >67%",
+      requiresSifrarnik: false,
+    },
   ];
 
   return (

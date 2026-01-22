@@ -191,10 +191,47 @@ button.secondary:hover:not(:disabled) {
   font-size: 12px;
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .zoom-controls {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.search-input {
+  width: 120px;
+  padding: 4px 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 11px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.search-count {
+  font-size: 10px;
+  color: var(--text-secondary);
+  min-width: 40px;
 }
 
 .zoom-btn {
@@ -266,9 +303,19 @@ button.secondary:hover:not(:disabled) {
   background: var(--highlight);
 }
 
+.table-container td.search-match {
+  background: rgba(78, 201, 176, 0.25);
+  color: var(--success);
+  font-weight: 500;
+}
+
+.table-container td.highlighted.search-match {
+  background: linear-gradient(135deg, var(--highlight) 50%, rgba(78, 201, 176, 0.25) 50%);
+}
+
 /* Bottom panel */
 .bottom-panel {
-  height: 280px;
+  height: 340px;
   border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -590,6 +637,45 @@ button.secondary:hover:not(:disabled) {
   justify-content: center;
   color: var(--text-secondary);
   margin: 0;
+}
+
+/* Cell change tooltip */
+.cell-tooltip {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-family: "Consolas", "Monaco", monospace;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+}
+
+.tooltip-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.tooltip-row.original {
+  color: #f14c4c;
+}
+
+.tooltip-row.current {
+  color: #4ec9b0;
+}
+
+.tooltip-label {
+  font-weight: bold;
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.tooltip-value {
+  word-break: break-all;
 }
 
 /* Scrollbar styling */

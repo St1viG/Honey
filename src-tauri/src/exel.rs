@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::{fs::File, path::Path};
+use std::io::Write;
 
 use calamine::*;
 use crate::types::{Table,Row};
@@ -54,3 +55,8 @@ fn cell_to_string(cell: &Data) -> String {
 }
 
 
+pub fn export_file(content: String, path: &str) -> Result<(), String>{
+    let mut file = File::create(path).map_err(|e| e.to_string())?;
+    writeln!(file, "{}", content);
+    Ok(())
+}

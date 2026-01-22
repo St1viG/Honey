@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Header } from "./components/Header";
 import { TableView } from "./components/TableView";
@@ -33,6 +33,43 @@ function App() {
   // Right pane tab state
   const [rightPaneTab, setRightPaneTab] = useState("preview");
   const [exportText, setExportText] = useState("");
+
+  // Synced scroll state
+  const [syncScroll, setSyncScroll] = useState(false);
+  const invoiceRef = useRef(null);
+  const previewRef = useRef(null);
+
+  // Track cmd/ctrl key for synced scrolling
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.metaKey || e.ctrlKey) {
+        setSyncScroll(true);
+      }
+    };
+    const handleKeyUp = (e) => {
+      if (!e.metaKey && !e.ctrlKey) {
+        setSyncScroll(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
+  const handleInvoiceScroll = (top, left) => {
+    if (previewRef.current) {
+      previewRef.current.scrollTo(top, left);
+    }
+  };
+
+  const handlePreviewScroll = (top, left) => {
+    if (invoiceRef.current) {
+      invoiceRef.current.scrollTo(top, left);
+    }
+  };
 
   // Load persisted sifrarnik and mappings on startup
   useEffect(() => {
@@ -81,7 +118,8 @@ function App() {
     addLog(`Loaded sifrarnik: ${table.rows.length} items`);
   };
 
-  const handlePreviewUpdate = (table, changed, missing) => {
+  const handlePreviewUpdate = (table, changed, missing, exportStr) => {
+    setExportText(exportStr);
     setPreview(table);
     setChangedCells(changed || []);
 
@@ -156,10 +194,13 @@ function App() {
             </div>
             {leftPaneTab === "invoice" ? (
               <TableView
+                ref={invoiceRef}
                 table={invoice}
                 zoom={invoiceZoom}
                 onZoomIn={() => setInvoiceZoom((z) => Math.min(z + 20, 200))}
                 onZoomOut={() => setInvoiceZoom((z) => Math.max(z - 20, 40))}
+                syncScrollEnabled={syncScroll}
+                onSyncScroll={handleInvoiceScroll}
               />
             ) : (
               <TableView
@@ -188,11 +229,15 @@ function App() {
             </div>
             {rightPaneTab === "preview" ? (
               <TableView
+                ref={previewRef}
                 table={preview}
+                originalTable={invoice}
                 highlightCells={changedCells}
                 zoom={previewZoom}
                 onZoomIn={() => setPreviewZoom((z) => Math.min(z + 20, 200))}
                 onZoomOut={() => setPreviewZoom((z) => Math.max(z - 20, 40))}
+                syncScrollEnabled={syncScroll}
+                onSyncScroll={handlePreviewScroll}
               />
             ) : (
               <div className="export-preview">

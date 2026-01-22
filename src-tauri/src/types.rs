@@ -12,9 +12,39 @@ pub struct Table {
 impl Table{
     pub fn format_redovna_cena_4dec(&mut self){
         for row in &mut self.rows{
-            row["Ukupna cena"] = row["Ukupna cena"].parse::<f64>().map(|n| format!("{:.4}", n)).unwrap();
+            if let Some(val) = row.get_mut("Ukupna cena") {
+                if let Ok(n) = val.parse::<f64>() {
+                    let excel_rounded = (n * 10000.0).round() / 10000.0;
+                    *val = format!("{:.4}", excel_rounded);
+                }
+            }
+
+
+            // row["Ukupna cena"] = row["Ukupna cena"].parse::<f64>().map(|n| format!("{:.4}", n)).unwrap();
         }
     }
+
+    pub fn format_kol_i_mp_cena_2dec(&mut self){
+        for row in &mut self.rows{
+            if let Some(val) = row.get_mut("Količina") {
+                if let Ok(n) = val.parse::<f64>() {
+                    let excel_rounded = (n * 100.0).round() / 100.0;
+                    *val = format!("{:.2}", excel_rounded);
+                }
+            }
+            if let Some(val) = row.get_mut("Cena MP") {
+                if let Ok(n) = val.parse::<f64>() {
+                    let excel_rounded = (n * 100.0).round() / 100.0;
+                    *val = format!("{:.2}", excel_rounded);
+                }
+            }
+
+
+            // row["Količina"] = row["Količina"].parse::<f64>().map(|n| { format!("{:.2}", n)}).unwrap();
+            // row["Cena MP"] = row["Cena MP"].parse::<f64>().map(|n| { format!("{:.2}", n)}).unwrap();
+        }
+    }
+
 
     pub fn update_price(){
 
@@ -82,8 +112,28 @@ impl Table{
         }
         changed
     }
-
 }
+
+pub fn table_to_str(transformed: &Table) -> Result<String, String> {
+    let table = transformed.clone();
+    let mut output: String = String::new();
+    for row in &table.rows{
+        let line = format!(
+            "{},{},kom,PDVOS,{},{},{},{},{}", 
+            row.get("Šifra artikla").map_or("", |v| v), 
+            row.get("Naziv artikla").map_or("", |v| v),
+            row.get("Bar kod").map_or("", |v| v),
+            row.get("Količina").map_or("", |v| v),
+            row.get("Ukupna cena").map_or("", |v| v),
+            row.get("Ukupna cena").map_or("", |v| v),
+            row.get("Cena MP").map_or("", |v| v)
+        );
+        output.push_str(&line);
+        output.push_str("\n");
+    }
+    Ok(output)
+}
+
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CellAddress {
