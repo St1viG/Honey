@@ -24,6 +24,8 @@ export function BottomPanel({
   onOperationsChange,
   defaultOperations,
   onDefaultOperationsChange,
+  priceThreshold,
+  onPriceThresholdChange,
 }) {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("operations");
@@ -65,6 +67,7 @@ export function BottomPanel({
             columnMappings={columnMappings}
             operations={operations}
             onOperationsChange={onOperationsChange}
+            priceThreshold={priceThreshold}
           />
         )}
         {activeTab === "barcodes" && showBarcodePanel && (
@@ -85,6 +88,8 @@ export function BottomPanel({
             onShowSifrarnik={onShowSifrarnik}
             defaultOperations={defaultOperations}
             onDefaultOperationsChange={onDefaultOperationsChange}
+            priceThreshold={priceThreshold}
+            onPriceThresholdChange={onPriceThresholdChange}
           />
         )}
       </div>

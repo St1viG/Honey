@@ -76,6 +76,10 @@ export const translations = {
     defaultOperationsDesc: "Select which operations should be checked by default when the app starts.",
     saveDefaults: "Save Defaults",
 
+    // Settings - Price threshold
+    priceThreshold: "Price Update Threshold",
+    priceThresholdDesc: "Minimum percentage difference required to auto-update prices.",
+
     // Settings - Language
     language: "Language",
     languageDesc: "Select your preferred language.",
@@ -172,6 +176,10 @@ export const translations = {
     defaultOperations: "Podrazumevane operacije",
     defaultOperationsDesc: "Izaberite koje operacije treba da budu označene po podrazumevanom kada se aplikacija pokrene.",
     saveDefaults: "Sačuvaj podrazumevano",
+
+    // Settings - Price threshold
+    priceThreshold: "Prag za ažuriranje cena",
+    priceThresholdDesc: "Minimalna procentualna razlika potrebna za automatsko ažuriranje cena.",
 
     // Settings - Language
     language: "Jezik",

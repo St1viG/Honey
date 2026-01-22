@@ -678,6 +678,34 @@ button.secondary:hover:not(:disabled) {
   color: white;
 }
 
+/* Threshold input */
+.threshold-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.threshold-input input {
+  width: 70px;
+  padding: 6px 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.threshold-input input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.threshold-input span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 /* Export preview */
 .export-preview {
   flex: 1;

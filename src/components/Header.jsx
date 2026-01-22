@@ -16,19 +16,7 @@ export function Header({ onInvoiceLoad, onSifrarnikLoad, sifrarnikLoaded, sifrar
   const formatTimestamp = (isoString) => {
     if (!isoString) return null;
     const date = new Date(isoString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      return `${t.today} ${t.at} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-    } else if (diffDays === 1) {
-      return t.yesterday;
-    } else if (diffDays < 7) {
-      return `${diffDays} ${t.daysAgo}`;
-    } else {
-      return date.toLocaleDateString();
-    }
+    return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
   const handleLoadInvoice = async () => {
     try {

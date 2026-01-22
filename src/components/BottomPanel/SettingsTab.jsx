@@ -12,6 +12,8 @@ export function SettingsTab({
   onShowSifrarnik,
   defaultOperations,
   onDefaultOperationsChange,
+  priceThreshold,
+  onPriceThresholdChange,
 }) {
   const { t, language, changeLanguage } = useLanguage();
   const [saving, setSaving] = useState(false);
@@ -63,6 +65,20 @@ export function SettingsTab({
     }
   };
 
+  const handleThresholdChange = (value) => {
+    const num = parseInt(value) || 0;
+    const clamped = Math.max(0, Math.min(100, num));
+    onPriceThresholdChange(clamped);
+  };
+
+  const handleSaveThreshold = () => {
+    try {
+      localStorage.setItem("priceThreshold", priceThreshold.toString());
+    } catch (e) {
+      console.error("Failed to save threshold:", e);
+    }
+  };
+
   const handleSaveMappings = async () => {
     setSaving(true);
     try {
@@ -76,25 +92,6 @@ export function SettingsTab({
 
   return (
     <div className="settings-tab">
-      <div className="settings-section">
-        <h3>{t.language}</h3>
-        <p className="settings-description">{t.languageDesc}</p>
-        <div className="language-selector">
-          <button
-            className={`lang-btn ${language === "en" ? "active" : ""}`}
-            onClick={() => changeLanguage("en")}
-          >
-            English
-          </button>
-          <button
-            className={`lang-btn ${language === "sr" ? "active" : ""}`}
-            onClick={() => changeLanguage("sr")}
-          >
-            Srpski
-          </button>
-        </div>
-      </div>
-
       <div className="settings-section">
         <h3>{t.columnMappings}</h3>
         <p className="settings-description">{t.columnMappingsDesc}</p>
@@ -188,6 +185,41 @@ export function SettingsTab({
         </div>
         <div className="settings-actions">
           <button onClick={handleSaveDefaults}>{t.saveDefaults}</button>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <h3>{t.priceThreshold}</h3>
+        <p className="settings-description">{t.priceThresholdDesc}</p>
+        <div className="threshold-input">
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={priceThreshold}
+            onChange={(e) => handleThresholdChange(e.target.value)}
+          />
+          <span>%</span>
+          <button onClick={handleSaveThreshold}>{t.save}</button>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <h3>{t.language}</h3>
+        <p className="settings-description">{t.languageDesc}</p>
+        <div className="language-selector">
+          <button
+            className={`lang-btn ${language === "en" ? "active" : ""}`}
+            onClick={() => changeLanguage("en")}
+          >
+            English
+          </button>
+          <button
+            className={`lang-btn ${language === "sr" ? "active" : ""}`}
+            onClick={() => changeLanguage("sr")}
+          >
+            Srpski
+          </button>
         </div>
       </div>
     </div>

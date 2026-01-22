@@ -47,6 +47,9 @@ function App() {
     autoUpdatePrice: false,
   });
 
+  // Price threshold setting
+  const [priceThreshold, setPriceThreshold] = useState(67);
+
   // Log state
   const [logs, setLogs] = useState([]);
 
@@ -138,6 +141,16 @@ function App() {
         }
       } catch (e) {
         console.log("No stored default operations found");
+      }
+
+      // Load price threshold
+      try {
+        const storedThreshold = localStorage.getItem("priceThreshold");
+        if (storedThreshold) {
+          setPriceThreshold(parseInt(storedThreshold));
+        }
+      } catch (e) {
+        console.log("No stored price threshold found");
       }
     };
 
@@ -334,6 +347,8 @@ function App() {
         onOperationsChange={setOperations}
         defaultOperations={defaultOperations}
         onDefaultOperationsChange={setDefaultOperations}
+        priceThreshold={priceThreshold}
+        onPriceThresholdChange={setPriceThreshold}
       />
     </div>
   );

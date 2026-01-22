@@ -13,6 +13,7 @@ export function OperationsTab({
   columnMappings,
   operations,
   onOperationsChange,
+  priceThreshold,
 }) {
   const { t } = useLanguage();
   const [processing, setProcessing] = useState(false);
@@ -35,10 +36,29 @@ export function OperationsTab({
         mappings: columnMappings,
       });
 
+      // If removeDuplicateBarcodes is checked but autoUpdateBarKod is not,
+      // find items with empty barcodes and show them for manual input
+      let missingBarcodes = result.missingBarcodes || [];
+
+      if (operations.removeDuplicateBarcodes && !operations.autoUpdateBarKod) {
+        const emptyBarcodeItems = result.table.rows
+          .map((row, idx) => ({
+            rowIdx: idx,
+            sifra: row["Šifra artikla"] || row["sifra"] || "",
+            naziv: row["Naziv artikla"] || row["naziv"] || "",
+            barcode: row["Bar kod"] || row["barKod"] || "",
+          }))
+          .filter((item) => !item.barcode || item.barcode.trim() === "");
+
+        if (emptyBarcodeItems.length > 0) {
+          missingBarcodes = emptyBarcodeItems;
+        }
+      }
+
       onPreviewUpdate(
         result.table,
         result.changedCells,
-        result.missingBarcodes,
+        missingBarcodes,
         result.exportStr,
       );
 
@@ -86,23 +106,29 @@ export function OperationsTab({
       <div className="operations-section">
         <h3>{t.operationsTitle}</h3>
         <div className="operations-list">
-          {operationsList.map((op) => (
-            <label
-              key={op.key}
-              className={`operation-item ${op.requiresSifrarnik && !sifrarnik ? "disabled" : ""}`}
-            >
-              <input
-                type="checkbox"
-                checked={operations[op.key]}
-                onChange={() => handleCheckboxChange(op.key)}
-                disabled={op.requiresSifrarnik && !sifrarnik}
-              />
-              <span>{t[op.labelKey]}</span>
-              {op.requiresSifrarnik && !sifrarnik && (
-                <span className="requires-badge">{t.needsDatabase}</span>
-              )}
-            </label>
-          ))}
+          {operationsList.map((op) => {
+            // Special handling for autoUpdatePrice to show dynamic threshold
+            const label = op.key === "autoUpdatePrice"
+              ? `${t.autoUpdatePrice.replace(">67%", `>${priceThreshold}%`)}`
+              : t[op.labelKey];
+            return (
+              <label
+                key={op.key}
+                className={`operation-item ${op.requiresSifrarnik && !sifrarnik ? "disabled" : ""}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={operations[op.key]}
+                  onChange={() => handleCheckboxChange(op.key)}
+                  disabled={op.requiresSifrarnik && !sifrarnik}
+                />
+                <span>{label}</span>
+                {op.requiresSifrarnik && !sifrarnik && (
+                  <span className="requires-badge">{t.needsDatabase}</span>
+                )}
+              </label>
+            );
+          })}
         </div>
         <div className="operations-actions">
           <button onClick={handleApply} disabled={processing || !invoice}>
