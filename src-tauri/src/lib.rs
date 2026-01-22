@@ -12,7 +12,7 @@ pub fn run() {
         .manage(AppState::new())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![load_invoice, load_database, apply_operations, export_file])
+        .invoke_handler(tauri::generate_handler![load_invoice, load_database, apply_operations, export_file, set_database])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,29 +1,24 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
+import { useLanguage } from "../../i18n/LanguageContext";
 
 export function OperationsTab({
   invoice,
+  invoiceFilename,
   sifrarnik,
   onPreviewUpdate,
   onLogMessage,
   logs,
   columnMappings,
+  operations,
+  onOperationsChange,
 }) {
-  const [operations, setOperations] = useState({
-    updateNames: false,
-    formatPrice4Dec: false,
-    removeDuplicateBarcodes: false,
-    swapCommasToDots: false,
-    autoUpdateBarKod: false,
-    formatColAndMpPrice2Dec: false,
-    autoUpdatePrice: false,
-  });
-
+  const { t } = useLanguage();
   const [processing, setProcessing] = useState(false);
 
   const handleCheckboxChange = (key) => {
-    setOperations((prev) => ({ ...prev, [key]: !prev[key] }));
+    onOperationsChange((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleApply = async () => {
@@ -60,9 +55,10 @@ export function OperationsTab({
   };
 
   const handleSave = async () => {
+    const defaultName = invoiceFilename ? `${invoiceFilename}.dat` : "output.dat";
     const path = await save({
       filters: [{ name: "Data File", extensions: ["dat"] }],
-      defaultPath: "output.dat",
+      defaultPath: defaultName,
     });
 
     if (path) {
@@ -76,47 +72,19 @@ export function OperationsTab({
   };
 
   const operationsList = [
-    {
-      key: "updateNames",
-      label: "Update names from Sifrarnik",
-      requiresSifrarnik: true,
-    },
-    {
-      key: "formatPrice4Dec",
-      label: "Format prices to 4 decimals",
-      requiresSifrarnik: false,
-    },
-    {
-      key: "formatColAndMpPrice2Dec",
-      label: "Format quantity and MP price to 2 decimals",
-      requiresSifrarnik: false,
-    },
-    {
-      key: "removeDuplicateBarcodes",
-      label: "Remove duplicate barcodes",
-      requiresSifrarnik: false,
-    },
-    {
-      key: "autoUpdateBarKod",
-      label: "Auto-update barcodes (opens panel for missing)",
-      requiresSifrarnik: true,
-    },
-    {
-      key: "swapCommasToDots",
-      label: "Swap commas to dots",
-      requiresSifrarnik: false,
-    },
-    {
-      key: "autoUpdatePrice",
-      label: "Auto-update prices with >67%",
-      requiresSifrarnik: false,
-    },
+    { key: "updateNames", labelKey: "updateNames", requiresSifrarnik: true },
+    { key: "formatPrice4Dec", labelKey: "formatPrice4Dec", requiresSifrarnik: false },
+    { key: "formatColAndMpPrice2Dec", labelKey: "formatColAndMpPrice2Dec", requiresSifrarnik: false },
+    { key: "removeDuplicateBarcodes", labelKey: "removeDuplicateBarcodes", requiresSifrarnik: false },
+    { key: "autoUpdateBarKod", labelKey: "autoUpdateBarKod", requiresSifrarnik: true },
+    { key: "swapCommasToDots", labelKey: "swapCommasToDots", requiresSifrarnik: false },
+    { key: "autoUpdatePrice", labelKey: "autoUpdatePrice", requiresSifrarnik: false },
   ];
 
   return (
     <div className="operations-tab">
       <div className="operations-section">
-        <h3>Operations</h3>
+        <h3>{t.operationsTitle}</h3>
         <div className="operations-list">
           {operationsList.map((op) => (
             <label
@@ -129,28 +97,28 @@ export function OperationsTab({
                 onChange={() => handleCheckboxChange(op.key)}
                 disabled={op.requiresSifrarnik && !sifrarnik}
               />
-              <span>{op.label}</span>
+              <span>{t[op.labelKey]}</span>
               {op.requiresSifrarnik && !sifrarnik && (
-                <span className="requires-badge">needs sifrarnik</span>
+                <span className="requires-badge">{t.needsDatabase}</span>
               )}
             </label>
           ))}
         </div>
         <div className="operations-actions">
           <button onClick={handleApply} disabled={processing || !invoice}>
-            {processing ? "Processing..." : "Apply"}
+            {processing ? t.processing : t.apply}
           </button>
           <button onClick={handleSave} disabled={!invoice}>
-            Save As...
+            {t.saveAs}
           </button>
         </div>
       </div>
 
       <div className="log-section">
-        <h3>Log</h3>
+        <h3>{t.log}</h3>
         <div className="log-output">
           {logs.length === 0 ? (
-            <p className="log-empty">No operations performed yet</p>
+            <p className="log-empty">{t.noOperationsYet}</p>
           ) : (
             logs.map((log, idx) => (
               <div key={idx} className="log-entry">

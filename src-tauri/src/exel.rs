@@ -57,6 +57,6 @@ fn cell_to_string(cell: &Data) -> String {
 
 pub fn export_file(content: String, path: &str) -> Result<(), String>{
     let mut file = File::create(path).map_err(|e| e.to_string())?;
-    writeln!(file, "{}", content);
+    let _ = writeln!(file, "{}", content);
     Ok(())
 }

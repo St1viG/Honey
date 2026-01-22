@@ -101,7 +101,7 @@ impl Table{
         println!("TOTAL OF {} CHANGES OF {} TOTAL", cnt, original.rows.len());
     }
 
-    pub fn compareCells(self, table: &Table) -> Vec<CellAddress>{
+    pub fn compare_cells(self, table: &Table) -> Vec<CellAddress>{
         let mut changed: Vec<CellAddress> = Vec::new();
         for (row_no, row) in self.rows.iter().enumerate(){
             for (col, value) in row{
@@ -164,5 +164,3 @@ impl AppState {
         }
     }
 }
-
-

@@ -2,10 +2,14 @@ import { useState } from "react";
 import { OperationsTab } from "./OperationsTab";
 import { BarcodePanel } from "./BarcodePanel";
 import { SettingsTab } from "./SettingsTab";
+import { useLanguage } from "../../i18n/LanguageContext";
 
 export function BottomPanel({
   invoice,
+  invoiceFilename,
   sifrarnik,
+  sifrarnikName,
+  sifrarnikTimestamp,
   onPreviewUpdate,
   onLogMessage,
   logs,
@@ -16,18 +20,23 @@ export function BottomPanel({
   columnMappings,
   onMappingsChange,
   onShowSifrarnik,
+  operations,
+  onOperationsChange,
+  defaultOperations,
+  onDefaultOperationsChange,
 }) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("operations");
 
   const tabs = [
-    { id: "operations", label: "Operations" },
-    { id: "settings", label: "Settings" },
+    { id: "operations", label: t.operations },
+    { id: "settings", label: t.settings },
   ];
 
   if (showBarcodePanel) {
     tabs.splice(1, 0, {
       id: "barcodes",
-      label: `Barcodes (${missingBarcodes?.length || 0})`,
+      label: `${t.barcodes} (${missingBarcodes?.length || 0})`,
     });
   }
 
@@ -48,11 +57,14 @@ export function BottomPanel({
         {activeTab === "operations" && (
           <OperationsTab
             invoice={invoice}
+            invoiceFilename={invoiceFilename}
             sifrarnik={sifrarnik}
             onPreviewUpdate={onPreviewUpdate}
             onLogMessage={onLogMessage}
             logs={logs}
             columnMappings={columnMappings}
+            operations={operations}
+            onOperationsChange={onOperationsChange}
           />
         )}
         {activeTab === "barcodes" && showBarcodePanel && (
@@ -66,9 +78,13 @@ export function BottomPanel({
           <SettingsTab
             invoice={invoice}
             sifrarnik={sifrarnik}
+            sifrarnikName={sifrarnikName}
+            sifrarnikTimestamp={sifrarnikTimestamp}
             columnMappings={columnMappings}
             onMappingsChange={onMappingsChange}
             onShowSifrarnik={onShowSifrarnik}
+            defaultOperations={defaultOperations}
+            onDefaultOperationsChange={onDefaultOperationsChange}
           />
         )}
       </div>

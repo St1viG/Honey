@@ -3,13 +3,19 @@ import { invoke } from "@tauri-apps/api/core";
 import { Header } from "./components/Header";
 import { TableView } from "./components/TableView";
 import { BottomPanel } from "./components/BottomPanel/BottomPanel";
+import { useLanguage } from "./i18n/LanguageContext";
 import "./App.css";
 
 function App() {
+  const { t } = useLanguage();
+
   // Table state
   const [invoice, setInvoice] = useState(null);
+  const [invoiceFilename, setInvoiceFilename] = useState(null);
   const [preview, setPreview] = useState(null);
   const [sifrarnik, setSifrarnik] = useState(null);
+  const [sifrarnikName, setSifrarnikName] = useState(null);
+  const [sifrarnikTimestamp, setSifrarnikTimestamp] = useState(null);
   const [changedCells, setChangedCells] = useState([]);
 
   // Barcode panel state
@@ -18,6 +24,28 @@ function App() {
 
   // Settings state
   const [columnMappings, setColumnMappings] = useState({});
+
+  // Operations state (lifted up to preserve across tab switches)
+  const [operations, setOperations] = useState({
+    updateNames: false,
+    formatPrice4Dec: false,
+    removeDuplicateBarcodes: false,
+    swapCommasToDots: false,
+    autoUpdateBarKod: false,
+    formatColAndMpPrice2Dec: false,
+    autoUpdatePrice: false,
+  });
+
+  // Default operations (which checkboxes are checked on app mount)
+  const [defaultOperations, setDefaultOperations] = useState({
+    updateNames: false,
+    formatPrice4Dec: false,
+    removeDuplicateBarcodes: false,
+    swapCommasToDots: false,
+    autoUpdateBarKod: false,
+    formatColAndMpPrice2Dec: false,
+    autoUpdatePrice: false,
+  });
 
   // Log state
   const [logs, setLogs] = useState([]);
@@ -74,23 +102,42 @@ function App() {
   // Load persisted sifrarnik and mappings on startup
   useEffect(() => {
     const loadPersistedData = async () => {
+      // Load sifrarnik from localStorage
       try {
-        const storedSifrarnik = await invoke("get_stored_sifrarnik");
-        if (storedSifrarnik) {
-          setSifrarnik(storedSifrarnik);
-          addLog("Loaded stored sifrarnik");
+        const stored = localStorage.getItem("sifrarnik");
+        if (stored) {
+          const { table, name, timestamp } = JSON.parse(stored);
+          setSifrarnik(table);
+          setSifrarnikName(name);
+          setSifrarnikTimestamp(timestamp);
+          // Load cached table into Rust backend state
+          await invoke("set_database", { table });
+          addLog("Loaded cached sifrarnik");
         }
       } catch (e) {
-        console.log("No stored sifrarnik found");
+        console.log("No stored sifrarnik found or failed to restore:", e);
       }
 
+      // Load column mappings from localStorage
       try {
-        const storedMappings = await invoke("load_column_mappings");
+        const storedMappings = localStorage.getItem("columnMappings");
         if (storedMappings) {
-          setColumnMappings(storedMappings);
+          setColumnMappings(JSON.parse(storedMappings));
         }
       } catch (e) {
         console.log("No stored mappings found");
+      }
+
+      // Load default operations from localStorage and apply them
+      try {
+        const storedDefaults = localStorage.getItem("defaultOperations");
+        if (storedDefaults) {
+          const defaults = JSON.parse(storedDefaults);
+          setDefaultOperations(defaults);
+          setOperations(defaults); // Apply defaults on mount
+        }
+      } catch (e) {
+        console.log("No stored default operations found");
       }
     };
 
@@ -102,20 +149,31 @@ function App() {
     setLogs((prev) => [...prev, `[${timestamp}] ${message}`]);
   };
 
-  const handleInvoiceLoad = (table) => {
+  const handleInvoiceLoad = (table, filename) => {
     setInvoice(table);
+    setInvoiceFilename(filename);
     setPreview(null);
     setChangedCells([]);
     setMissingBarcodes([]);
     setShowBarcodePanel(false);
     addLog(
-      `Loaded invoice: ${table.rows.length} rows, ${table.headers.length} columns`,
+      `Loaded invoice: ${filename} (${table.rows.length} rows, ${table.headers.length} columns)`,
     );
   };
 
-  const handleSifrarnikLoad = (table) => {
+  const handleSifrarnikLoad = (table, filename) => {
+    const timestamp = new Date().toISOString();
     setSifrarnik(table);
-    addLog(`Loaded sifrarnik: ${table.rows.length} items`);
+    setSifrarnikName(filename);
+    setSifrarnikTimestamp(timestamp);
+
+    // Persist to localStorage
+    try {
+      localStorage.setItem("sifrarnik", JSON.stringify({ table, name: filename, timestamp }));
+      addLog(`Loaded and cached sifrarnik: ${filename} (${table.rows.length} items)`);
+    } catch (e) {
+      addLog(`Loaded sifrarnik: ${table.rows.length} items (cache failed: ${e})`);
+    }
   };
 
   const handlePreviewUpdate = (table, changed, missing, exportStr) => {
@@ -171,6 +229,8 @@ function App() {
         onInvoiceLoad={handleInvoiceLoad}
         onSifrarnikLoad={handleSifrarnikLoad}
         sifrarnikLoaded={!!sifrarnik}
+        sifrarnikName={sifrarnikName}
+        sifrarnikTimestamp={sifrarnikTimestamp}
       />
 
       <main className="main-content">
@@ -181,14 +241,14 @@ function App() {
                 className={`pane-tab ${leftPaneTab === "invoice" ? "active" : ""}`}
                 onClick={() => setLeftPaneTab("invoice")}
               >
-                Invoice
+                {t.invoice}
               </button>
               {sifrarnik && (
                 <button
                   className={`pane-tab ${leftPaneTab === "sifrarnik" ? "active" : ""}`}
                   onClick={() => setLeftPaneTab("sifrarnik")}
                 >
-                  Sifrarnik
+                  {t.database}
                 </button>
               )}
             </div>
@@ -218,13 +278,13 @@ function App() {
                 className={`pane-tab ${rightPaneTab === "preview" ? "active" : ""}`}
                 onClick={() => setRightPaneTab("preview")}
               >
-                Preview
+                {t.preview}
               </button>
               <button
                 className={`pane-tab ${rightPaneTab === "export" ? "active" : ""}`}
                 onClick={() => setRightPaneTab("export")}
               >
-                Export (.dat)
+                {t.exportDat}
               </button>
             </div>
             {rightPaneTab === "preview" ? (
@@ -256,7 +316,10 @@ function App() {
 
       <BottomPanel
         invoice={invoice}
+        invoiceFilename={invoiceFilename}
         sifrarnik={sifrarnik}
+        sifrarnikName={sifrarnikName}
+        sifrarnikTimestamp={sifrarnikTimestamp}
         onPreviewUpdate={handlePreviewUpdate}
         onLogMessage={addLog}
         logs={logs}
@@ -267,6 +330,10 @@ function App() {
         columnMappings={columnMappings}
         onMappingsChange={handleMappingsChange}
         onShowSifrarnik={() => setLeftPaneTab("sifrarnik")}
+        operations={operations}
+        onOperationsChange={setOperations}
+        defaultOperations={defaultOperations}
+        onDefaultOperationsChange={setDefaultOperations}
       />
     </div>
   );

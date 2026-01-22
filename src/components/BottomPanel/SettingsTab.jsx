@@ -1,30 +1,66 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { useLanguage } from "../../i18n/LanguageContext";
 
 export function SettingsTab({
   invoice,
   sifrarnik,
+  sifrarnikName,
+  sifrarnikTimestamp,
   columnMappings,
   onMappingsChange,
   onShowSifrarnik,
+  defaultOperations,
+  onDefaultOperationsChange,
 }) {
+  const { t, language, changeLanguage } = useLanguage();
   const [saving, setSaving] = useState(false);
 
   const sifrarnikHeaders = sifrarnik?.headers || [];
   const invoiceHeaders = invoice?.headers || [];
 
-  // Required mappings - these are the sifrarnik columns that need to map to invoice columns
+  // Format timestamp for display
+  const formatTimestamp = (isoString) => {
+    if (!isoString) return t.unknown;
+    const date = new Date(isoString);
+    return date.toLocaleString();
+  };
+
+  // Operations list for default settings
+  const operationsList = [
+    { key: "updateNames", labelKey: "updateNames" },
+    { key: "formatPrice4Dec", labelKey: "formatPrice4Dec" },
+    { key: "formatColAndMpPrice2Dec", labelKey: "formatColAndMpPrice2Dec" },
+    { key: "removeDuplicateBarcodes", labelKey: "removeDuplicateBarcodes" },
+    { key: "autoUpdateBarKod", labelKey: "autoUpdateBarKod" },
+    { key: "swapCommasToDots", labelKey: "swapCommasToDots" },
+    { key: "autoUpdatePrice", labelKey: "autoUpdatePrice" },
+  ];
+
+  // Required mappings
   const requiredMappings = [
-    { key: "sifra", label: "Sifra (ID)" },
-    { key: "naziv", label: "Naziv (Name)" },
-    { key: "barKod", label: "Bar Kod (Barcode)" },
-    { key: "cijena", label: "Cijena (Price)" },
-    { key: "jm", label: "JM (Unit)" },
+    { key: "sifra", labelKey: "sifraId" },
+    { key: "naziv", labelKey: "nazivName" },
+    { key: "barKod", labelKey: "barKodBarcode" },
+    { key: "cijena", labelKey: "cijenaPrice" },
+    { key: "jm", labelKey: "jmUnit" },
   ];
 
   const handleMappingChange = (key, value) => {
     const newMappings = { ...columnMappings, [key]: value };
     onMappingsChange(newMappings);
+  };
+
+  const handleDefaultOperationChange = (key) => {
+    onDefaultOperationsChange((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleSaveDefaults = () => {
+    try {
+      localStorage.setItem("defaultOperations", JSON.stringify(defaultOperations));
+    } catch (e) {
+      console.error("Failed to save defaults:", e);
+    }
   };
 
   const handleSaveMappings = async () => {
@@ -41,27 +77,42 @@ export function SettingsTab({
   return (
     <div className="settings-tab">
       <div className="settings-section">
-        <h3>Column Mappings</h3>
-        <p className="settings-description">
-          Connect sifrarnik columns to invoice columns. This tells the app which columns correspond to each other.
-        </p>
+        <h3>{t.language}</h3>
+        <p className="settings-description">{t.languageDesc}</p>
+        <div className="language-selector">
+          <button
+            className={`lang-btn ${language === "en" ? "active" : ""}`}
+            onClick={() => changeLanguage("en")}
+          >
+            English
+          </button>
+          <button
+            className={`lang-btn ${language === "sr" ? "active" : ""}`}
+            onClick={() => changeLanguage("sr")}
+          >
+            Srpski
+          </button>
+        </div>
+      </div>
 
-        {!sifrarnik && (
-          <p className="warning">Load a sifrarnik first to configure mappings.</p>
-        )}
+      <div className="settings-section">
+        <h3>{t.columnMappings}</h3>
+        <p className="settings-description">{t.columnMappingsDesc}</p>
+
+        {!sifrarnik && <p className="warning">{t.loadDatabaseFirst}</p>}
 
         {sifrarnik && (
           <>
             <div className="mappings-grid">
               <div className="mapping-header">
-                <span>Field</span>
-                <span>Sifrarnik Column</span>
-                <span>Invoice Column</span>
+                <span>{t.field}</span>
+                <span>{t.databaseColumn}</span>
+                <span>{t.invoiceColumn}</span>
               </div>
 
               {requiredMappings.map((mapping) => (
                 <div key={mapping.key} className="mapping-row">
-                  <label>{mapping.label}</label>
+                  <label>{t[mapping.labelKey]}</label>
 
                   <select
                     value={columnMappings[`sifrarnik_${mapping.key}`] || ""}
@@ -69,7 +120,7 @@ export function SettingsTab({
                       handleMappingChange(`sifrarnik_${mapping.key}`, e.target.value)
                     }
                   >
-                    <option value="">-- Select --</option>
+                    <option value="">{t.select}</option>
                     {sifrarnikHeaders.map((header) => (
                       <option key={header} value={header}>
                         {header}
@@ -84,7 +135,7 @@ export function SettingsTab({
                     }
                     disabled={!invoice}
                   >
-                    <option value="">-- Select --</option>
+                    <option value="">{t.select}</option>
                     {invoiceHeaders.map((header) => (
                       <option key={header} value={header}>
                         {header}
@@ -97,7 +148,7 @@ export function SettingsTab({
 
             <div className="settings-actions">
               <button onClick={handleSaveMappings} disabled={saving}>
-                {saving ? "Saving..." : "Save Mappings"}
+                {saving ? t.saving : t.saveMappings}
               </button>
             </div>
           </>
@@ -105,17 +156,39 @@ export function SettingsTab({
       </div>
 
       <div className="settings-section">
-        <h3>Sifrarnik</h3>
+        <h3>{t.databaseInfo}</h3>
         {sifrarnik ? (
-          <>
-            <p>
-              {sifrarnik.rows.length} items loaded, {sifrarnik.headers.length} columns
-            </p>
-            <button onClick={onShowSifrarnik}>View Sifrarnik</button>
-          </>
+          <div className="sifrarnik-info">
+            <div className="sifrarnik-details">
+              <p><strong>{t.file}:</strong> {sifrarnikName || t.unknown}</p>
+              <p><strong>{t.loaded}:</strong> {formatTimestamp(sifrarnikTimestamp)}</p>
+              <p><strong>{t.items}:</strong> {sifrarnik.rows.length} {t.rows}, {sifrarnik.headers.length} {t.columns}</p>
+            </div>
+            <button onClick={onShowSifrarnik}>{t.viewDatabase}</button>
+          </div>
         ) : (
-          <p>No sifrarnik loaded. Load one using the button in the header.</p>
+          <p>{t.noDatabaseLoadedMsg}</p>
         )}
+      </div>
+
+      <div className="settings-section">
+        <h3>{t.defaultOperations}</h3>
+        <p className="settings-description">{t.defaultOperationsDesc}</p>
+        <div className="default-operations-list">
+          {operationsList.map((op) => (
+            <label key={op.key} className="operation-item">
+              <input
+                type="checkbox"
+                checked={defaultOperations[op.key] || false}
+                onChange={() => handleDefaultOperationChange(op.key)}
+              />
+              <span>{t[op.labelKey]}</span>
+            </label>
+          ))}
+        </div>
+        <div className="settings-actions">
+          <button onClick={handleSaveDefaults}>{t.saveDefaults}</button>
+        </div>
       </div>
     </div>
   );

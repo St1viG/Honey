@@ -1,16 +1,18 @@
 import { useState } from "react";
+import { useLanguage } from "../../i18n/LanguageContext";
 
 export function BarcodePanel({
   missingBarcodes,
   onBarcodeUpdate,
   onBarcodeSkip,
 }) {
+  const { t } = useLanguage();
   const [barcodeInputs, setBarcodeInputs] = useState({});
 
   if (!missingBarcodes || missingBarcodes.length === 0) {
     return (
       <div className="barcode-panel">
-        <p>No missing barcodes to update</p>
+        <p>{t.noData}</p>
       </div>
     );
   }
@@ -40,15 +42,6 @@ export function BarcodePanel({
     });
   };
 
-  const handleUpdateAll = () => {
-    Object.entries(barcodeInputs).forEach(([rowIdx, barcode]) => {
-      if (barcode && barcode.trim()) {
-        onBarcodeUpdate(parseInt(rowIdx), barcode.trim());
-      }
-    });
-    setBarcodeInputs({});
-  };
-
   const handleSkipAll = () => {
     missingBarcodes.forEach((item) => {
       onBarcodeSkip(item.rowIdx);
@@ -59,11 +52,10 @@ export function BarcodePanel({
   return (
     <div className="barcode-panel">
       <div className="barcode-header">
-        <h3>Missing Barcodes ({missingBarcodes.length} items)</h3>
+        <h3>{t.barcodesTitle} ({missingBarcodes.length})</h3>
         <div className="barcode-actions">
-          <button onClick={handleUpdateAll}>Update All Filled</button>
           <button onClick={handleSkipAll} className="secondary">
-            Skip All
+            {t.skipAll}
           </button>
         </div>
       </div>
@@ -72,11 +64,11 @@ export function BarcodePanel({
         <table>
           <thead>
             <tr>
-              <th>Row</th>
-              <th>Sifra</th>
-              <th>Naziv</th>
-              <th>New Barcode</th>
-              <th>Actions</th>
+              <th>#</th>
+              <th>{t.itemCode}</th>
+              <th>{t.itemName}</th>
+              <th>{t.barcode}</th>
+              <th>{t.actions}</th>
             </tr>
           </thead>
           <tbody>
@@ -88,7 +80,7 @@ export function BarcodePanel({
                 <td>
                   <input
                     type="text"
-                    placeholder="Enter barcode..."
+                    placeholder={t.barcode}
                     value={barcodeInputs[item.rowIdx] || ""}
                     onChange={(e) =>
                       handleInputChange(item.rowIdx, e.target.value)
@@ -103,13 +95,13 @@ export function BarcodePanel({
                     onClick={() => handleUpdate(item.rowIdx)}
                     disabled={!barcodeInputs[item.rowIdx]?.trim()}
                   >
-                    Update
+                    {t.save}
                   </button>
                   <button
                     onClick={() => handleSkip(item.rowIdx)}
                     className="secondary"
                   >
-                    Skip
+                    {t.skip}
                   </button>
                 </td>
               </tr>

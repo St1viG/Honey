@@ -72,7 +72,7 @@ pub fn apply_operations(table: Table,operations: Operations,mappings: HashMap<St
     }else{
 
     }   
-    let changed_cells = transformed.clone().compareCells(&table);       
+    let changed_cells = transformed.clone().compare_cells(&table);       
     let output_str = table_to_str(&transformed).unwrap();  
     *state.transformed.lock().unwrap() = Some(transformed.clone());                                                                                                          
     Ok(OperationResult { table: transformed, changed_cells: changed_cells.to_vec(), missing_barcodes: vec![] , logs: changed_cells.len(), export_str: output_str})
@@ -86,3 +86,8 @@ pub fn export_file(path: &str, state: State<AppState>){
         let _ = fs::write(path, table_to_str(&data).unwrap());
     }
 }
+
+#[tauri::command]                                                                                                                                                               
+  pub fn set_database(table: Table, state: State<AppState>) {                                                                                                                     
+      *state.database.lock().unwrap() = Some(table);                                                                                                                              
+  }      

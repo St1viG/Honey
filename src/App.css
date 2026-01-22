@@ -609,6 +609,75 @@ button.secondary:hover:not(:disabled) {
   border-radius: 3px;
 }
 
+.sifrarnik-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.sifrarnik-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sifrarnik-details p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.sifrarnik-details strong {
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+
+.default-operations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.default-operations-list .operation-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.default-operations-list .operation-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+/* Language selector */
+.language-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.lang-btn {
+  padding: 6px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.lang-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.lang-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
 /* Export preview */
 .export-preview {
   flex: 1;

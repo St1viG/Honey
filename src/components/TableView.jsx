@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useLanguage } from "../i18n/LanguageContext";
 
 export const TableView = forwardRef(function TableView(
   {
@@ -14,6 +15,7 @@ export const TableView = forwardRef(function TableView(
   },
   ref
 ) {
+  const { t } = useLanguage();
   const containerRef = useRef(null);
   const [tooltip, setTooltip] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,7 +52,7 @@ export const TableView = forwardRef(function TableView(
   if (!table || !table.headers || table.headers.length === 0) {
     return (
       <div className="table-view empty">
-        <p>{title ? `No ${title.toLowerCase()} loaded` : "No data"}</p>
+        <p>{t.noData}</p>
       </div>
     );
   }
@@ -125,7 +127,7 @@ export const TableView = forwardRef(function TableView(
             <input
               type="text"
               className="search-input"
-              placeholder="Find..."
+              placeholder={t.find}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
