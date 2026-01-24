@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useLanguage } from "../../i18n/LanguageContext";
 
 export function SettingsTab({
@@ -14,6 +13,7 @@ export function SettingsTab({
   onDefaultOperationsChange,
   priceThreshold,
   onPriceThresholdChange,
+  onSaveSettings,
 }) {
   const { t, language, changeLanguage } = useLanguage();
   const [saving, setSaving] = useState(false);
@@ -58,11 +58,7 @@ export function SettingsTab({
   };
 
   const handleSaveDefaults = () => {
-    try {
-      localStorage.setItem("defaultOperations", JSON.stringify(defaultOperations));
-    } catch (e) {
-      console.error("Failed to save defaults:", e);
-    }
+    onSaveSettings();
   };
 
   const handleThresholdChange = (value) => {
@@ -72,17 +68,13 @@ export function SettingsTab({
   };
 
   const handleSaveThreshold = () => {
-    try {
-      localStorage.setItem("priceThreshold", priceThreshold.toString());
-    } catch (e) {
-      console.error("Failed to save threshold:", e);
-    }
+    onSaveSettings();
   };
 
   const handleSaveMappings = async () => {
     setSaving(true);
     try {
-      await invoke("save_column_mappings", { mappings: columnMappings });
+      await onSaveSettings();
     } catch (e) {
       console.error("Failed to save mappings:", e);
     } finally {

@@ -51,6 +51,19 @@ export const translations = {
     skip: "Skip",
     skipAll: "Skip All",
 
+    // Barcode modal
+    missingBarcodes: "Missing Barcodes",
+    itemsNeedBarcodes: "items need barcodes",
+    enterBarcode: "Enter barcode...",
+    applyBarcodes: "Apply Barcodes",
+    previousBarcodesFound: "Previous Barcodes Found",
+    previousBarcodesDesc: "You've entered barcodes for this invoice before. Would you like to use the previous values or enter new ones?",
+    usePrevious: "Use Previous",
+    enterNew: "Enter New",
+    noBarcodeColumn: "No barcode column found in database. Please configure column mappings in Settings.",
+    autoFetchSuccess: "Auto-fetched barcodes from database",
+    autoFetchPartial: "Some barcodes couldn't be found in database",
+
     // Settings
     columnMappings: "Column Mappings",
     columnMappingsDesc: "Connect database columns to invoice columns. This tells the app which columns correspond to each other.",
@@ -151,6 +164,19 @@ export const translations = {
     save: "Sačuvaj",
     skip: "Preskoči",
     skipAll: "Preskoči sve",
+
+    // Barcode modal
+    missingBarcodes: "Nedostajući bar kodovi",
+    itemsNeedBarcodes: "artikala treba bar kodove",
+    enterBarcode: "Unesite bar kod...",
+    applyBarcodes: "Primeni bar kodove",
+    previousBarcodesFound: "Pronađeni prethodni bar kodovi",
+    previousBarcodesDesc: "Već ste uneli bar kodove za ovu fakturu. Da li želite da koristite prethodne vrednosti ili da unesete nove?",
+    usePrevious: "Koristi prethodne",
+    enterNew: "Unesi nove",
+    noBarcodeColumn: "Kolona bar koda nije pronađena u šifarniku. Molimo konfigurišite mapiranje kolona u Podešavanjima.",
+    autoFetchSuccess: "Bar kodovi automatski preuzeti iz šifarnika",
+    autoFetchPartial: "Neki bar kodovi nisu pronađeni u šifarniku",
 
     // Settings
     columnMappings: "Mapiranje kolona",

@@ -36,30 +36,22 @@ export function OperationsTab({
         mappings: columnMappings,
       });
 
-      // If removeDuplicateBarcodes is checked but autoUpdateBarKod is not,
-      // find items with empty barcodes and show them for manual input
-      let missingBarcodes = result.missingBarcodes || [];
-
-      if (operations.removeDuplicateBarcodes && !operations.autoUpdateBarKod) {
-        const emptyBarcodeItems = result.table.rows
-          .map((row, idx) => ({
-            rowIdx: idx,
-            sifra: row["Šifra artikla"] || row["sifra"] || "",
-            naziv: row["Naziv artikla"] || row["naziv"] || "",
-            barcode: row["Bar kod"] || row["barKod"] || "",
-          }))
-          .filter((item) => !item.barcode || item.barcode.trim() === "");
-
-        if (emptyBarcodeItems.length > 0) {
-          missingBarcodes = emptyBarcodeItems;
-        }
-      }
+      // Find items with empty barcodes
+      const emptyBarcodeItems = result.table.rows
+        .map((row, idx) => ({
+          rowIdx: idx,
+          sifra: row["Šifra artikla"] || row["sifra"] || "",
+          naziv: row["Naziv artikla"] || row["naziv"] || "",
+          barcode: row["Bar kod"] || row["barKod"] || "",
+        }))
+        .filter((item) => !item.barcode || item.barcode.trim() === "");
 
       onPreviewUpdate(
         result.table,
         result.changedCells,
-        missingBarcodes,
+        emptyBarcodeItems,
         result.exportStr,
+        operations.autoUpdateBarKod,
       );
 
       // Log results

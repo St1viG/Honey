@@ -1,8 +1,9 @@
 
 use crate::types::{Table, AppState, CellAddress, table_to_str};
 use crate::exel::read_exel;
-use tauri::State;
+use tauri::{AppHandle, State, Manager};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use std::fs;
 
@@ -91,3 +92,42 @@ pub fn export_file(path: &str, state: State<AppState>){
   pub fn set_database(table: Table, state: State<AppState>) {                                                                                                                     
       *state.database.lock().unwrap() = Some(table);                                                                                                                              
   }      
+
+
+pub fn get_data_dir(app: &tauri::AppHandle) -> PathBuf{
+    app.path().app_data_dir().unwrap()
+}
+
+#[tauri::command]
+pub fn save_sifrarnik(app: tauri::AppHandle, data: String) -> Result<(), String>{
+    let dir = get_data_dir(&app);                                                                                                                                               
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;                                                                                                                       
+    fs::write(dir.join("sifrarnik.json"), data).map_err(|e| e.to_string())  
+}
+
+#[tauri::command]
+pub fn load_sifrarnik(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let path = get_data_dir(&app).join("sifrarnik.json");
+    if path.exists() {
+        fs::read_to_string(path).map(Some).map_err(|e| e.to_string())
+    } else {
+        Ok(None)
+    }
+}
+
+#[tauri::command]
+pub fn save_settings(app: tauri::AppHandle, data: String) -> Result<(), String> {
+    let dir = get_data_dir(&app);
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    fs::write(dir.join("settings.json"), data).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn load_settings(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let path = get_data_dir(&app).join("settings.json");
+    if path.exists() {
+        fs::read_to_string(path).map(Some).map_err(|e| e.to_string())
+    } else {
+        Ok(None)
+    }
+}                                                                                                                                                                               

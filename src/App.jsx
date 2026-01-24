@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Header } from "./components/Header";
 import { TableView } from "./components/TableView";
 import { BottomPanel } from "./components/BottomPanel/BottomPanel";
+import { BarcodeModal } from "./components/BarcodeModal";
 import { useLanguage } from "./i18n/LanguageContext";
 import "./App.css";
 
@@ -18,9 +19,11 @@ function App() {
   const [sifrarnikTimestamp, setSifrarnikTimestamp] = useState(null);
   const [changedCells, setChangedCells] = useState([]);
 
-  // Barcode panel state
-  const [missingBarcodes, setMissingBarcodes] = useState([]);
-  const [showBarcodePanel, setShowBarcodePanel] = useState(false);
+  // Barcode modal state
+  const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  const [emptyBarcodeItems, setEmptyBarcodeItems] = useState([]);
+  const [cachedBarcodes, setCachedBarcodes] = useState({}); // { invoiceFilename: { rowIdx: barcode } }
+  const [pendingResult, setPendingResult] = useState(null); // Store result while modal is open
 
   // Settings state
   const [columnMappings, setColumnMappings] = useState({});
@@ -102,12 +105,12 @@ function App() {
     }
   };
 
-  // Load persisted sifrarnik and mappings on startup
+  // Load persisted sifrarnik and settings on startup
   useEffect(() => {
     const loadPersistedData = async () => {
-      // Load sifrarnik from localStorage
+      // Load sifrarnik from backend
       try {
-        const stored = localStorage.getItem("sifrarnik");
+        const stored = await invoke("load_sifrarnik");
         if (stored) {
           const { table, name, timestamp } = JSON.parse(stored);
           setSifrarnik(table);
@@ -115,42 +118,28 @@ function App() {
           setSifrarnikTimestamp(timestamp);
           // Load cached table into Rust backend state
           await invoke("set_database", { table });
-          addLog("Loaded cached sifrarnik");
+          addLog("Loaded cached database");
         }
       } catch (e) {
         console.log("No stored sifrarnik found or failed to restore:", e);
       }
 
-      // Load column mappings from localStorage
+      // Load settings from backend
       try {
-        const storedMappings = localStorage.getItem("columnMappings");
-        if (storedMappings) {
-          setColumnMappings(JSON.parse(storedMappings));
+        const stored = await invoke("load_settings");
+        if (stored) {
+          const settings = JSON.parse(stored);
+          if (settings.columnMappings) setColumnMappings(settings.columnMappings);
+          if (settings.defaultOperations) {
+            setDefaultOperations(settings.defaultOperations);
+            setOperations(settings.defaultOperations); // Apply defaults on mount
+          }
+          if (settings.priceThreshold !== undefined) {
+            setPriceThreshold(settings.priceThreshold);
+          }
         }
       } catch (e) {
-        console.log("No stored mappings found");
-      }
-
-      // Load default operations from localStorage and apply them
-      try {
-        const storedDefaults = localStorage.getItem("defaultOperations");
-        if (storedDefaults) {
-          const defaults = JSON.parse(storedDefaults);
-          setDefaultOperations(defaults);
-          setOperations(defaults); // Apply defaults on mount
-        }
-      } catch (e) {
-        console.log("No stored default operations found");
-      }
-
-      // Load price threshold
-      try {
-        const storedThreshold = localStorage.getItem("priceThreshold");
-        if (storedThreshold) {
-          setPriceThreshold(parseInt(storedThreshold));
-        }
-      } catch (e) {
-        console.log("No stored price threshold found");
+        console.log("No stored settings found:", e);
       }
     };
 
@@ -174,66 +163,150 @@ function App() {
     );
   };
 
-  const handleSifrarnikLoad = (table, filename) => {
+  const handleSifrarnikLoad = async (table, filename) => {
     const timestamp = new Date().toISOString();
     setSifrarnik(table);
     setSifrarnikName(filename);
     setSifrarnikTimestamp(timestamp);
 
-    // Persist to localStorage
+    // Persist to backend
     try {
-      localStorage.setItem("sifrarnik", JSON.stringify({ table, name: filename, timestamp }));
-      addLog(`Loaded and cached sifrarnik: ${filename} (${table.rows.length} items)`);
+      await invoke("save_sifrarnik", { data: JSON.stringify({ table, name: filename, timestamp }) });
+      addLog(`Loaded and cached database: ${filename} (${table.rows.length} items)`);
     } catch (e) {
-      addLog(`Loaded sifrarnik: ${table.rows.length} items (cache failed: ${e})`);
+      addLog(`Loaded database: ${table.rows.length} items (cache failed: ${e})`);
     }
   };
 
-  const handlePreviewUpdate = (table, changed, missing, exportStr) => {
+  // Called when operations complete - may trigger barcode modal
+  const handlePreviewUpdate = (table, changed, emptyItems, exportStr, autoUpdateBarcodes) => {
+    // If auto-update is enabled and there are empty items, try to fetch from sifrarnik
+    if (autoUpdateBarcodes && emptyItems && emptyItems.length > 0) {
+      const barcodeColumn = columnMappings.sifrarnik_barKod;
+      const sifraColumn = columnMappings.sifrarnik_sifra;
+
+      if (!barcodeColumn || !sifraColumn) {
+        addLog(t.noBarcodeColumn);
+        // Fall through to show modal for manual entry
+      } else if (sifrarnik) {
+        // Try to auto-fetch barcodes
+        let fetchedCount = 0;
+        const updatedTable = { ...table, rows: [...table.rows] };
+
+        emptyItems.forEach((item) => {
+          const sifrarnikRow = sifrarnik.rows.find(
+            (r) => r[sifraColumn] === item.sifra
+          );
+          if (sifrarnikRow && sifrarnikRow[barcodeColumn]) {
+            updatedTable.rows[item.rowIdx] = {
+              ...updatedTable.rows[item.rowIdx],
+              "Bar kod": sifrarnikRow[barcodeColumn],
+            };
+            fetchedCount++;
+          }
+        });
+
+        if (fetchedCount === emptyItems.length) {
+          // All barcodes found
+          addLog(`${t.autoFetchSuccess}: ${fetchedCount} items`);
+          setPreview(updatedTable);
+          setChangedCells(changed || []);
+          setExportText(exportStr);
+          return;
+        } else if (fetchedCount > 0) {
+          addLog(`${t.autoFetchPartial}: ${fetchedCount}/${emptyItems.length}`);
+          table = updatedTable;
+          // Filter remaining empty items
+          emptyItems = emptyItems.filter((item) => {
+            const row = updatedTable.rows[item.rowIdx];
+            return !row["Bar kod"] || row["Bar kod"].trim() === "";
+          });
+        }
+      }
+    }
+
+    // If there are still empty barcode items and auto-update is off, show modal
+    if (emptyItems && emptyItems.length > 0 && !autoUpdateBarcodes) {
+      setEmptyBarcodeItems(emptyItems);
+      setPendingResult({ table, changed, exportStr });
+      setShowBarcodeModal(true);
+      return;
+    }
+
+    // Normal flow - no modal needed
     setExportText(exportStr);
     setPreview(table);
     setChangedCells(changed || []);
-
-    if (missing && missing.length > 0) {
-      setMissingBarcodes(missing);
-      setShowBarcodePanel(true);
-      addLog(`Found ${missing.length} items with missing barcodes`);
-    } else {
-      setShowBarcodePanel(false);
-    }
   };
 
-  const handleBarcodeUpdate = async (rowIdx, barcode) => {
-    try {
-      const result = await invoke("update_barcode", {
-        rowIdx,
-        barcode,
-      });
-      setPreview(result.table);
-      setMissingBarcodes((prev) =>
-        prev.filter((item) => item.rowIdx !== rowIdx),
-      );
-      addLog(`Updated barcode for row ${rowIdx + 1}`);
+  // Handle barcode modal submission
+  const handleBarcodeModalSubmit = (barcodeInputs) => {
+    if (!pendingResult) return;
 
-      if (missingBarcodes.length <= 1) {
-        setShowBarcodePanel(false);
+    const { table, changed, exportStr } = pendingResult;
+    const updatedTable = { ...table, rows: [...table.rows] };
+    let updatedCount = 0;
+
+    Object.entries(barcodeInputs).forEach(([rowIdx, barcode]) => {
+      if (barcode && barcode.trim()) {
+        updatedTable.rows[parseInt(rowIdx)] = {
+          ...updatedTable.rows[parseInt(rowIdx)],
+          "Bar kod": barcode.trim(),
+        };
+        updatedCount++;
       }
-    } catch (e) {
-      addLog(`Failed to update barcode: ${e}`);
+    });
+
+    // Cache the entered barcodes for this invoice
+    if (invoiceFilename && updatedCount > 0) {
+      setCachedBarcodes((prev) => ({
+        ...prev,
+        [invoiceFilename]: { ...prev[invoiceFilename], ...barcodeInputs },
+      }));
     }
+
+    addLog(`Applied ${updatedCount} barcodes manually`);
+    setPreview(updatedTable);
+    setChangedCells(changed || []);
+    setExportText(exportStr);
+    setShowBarcodeModal(false);
+    setPendingResult(null);
   };
 
-  const handleBarcodeSkip = (rowIdx) => {
-    setMissingBarcodes((prev) => prev.filter((item) => item.rowIdx !== rowIdx));
-    addLog(`Skipped barcode for row ${rowIdx + 1}`);
+  // Handle using previous barcodes
+  const handleUsePreviousBarcodes = (previousBarcodes) => {
+    handleBarcodeModalSubmit(previousBarcodes);
+  };
 
-    if (missingBarcodes.length <= 1) {
-      setShowBarcodePanel(false);
+  // Handle skip all in modal
+  const handleBarcodeModalSkip = () => {
+    if (pendingResult) {
+      const { table, changed, exportStr } = pendingResult;
+      setPreview(table);
+      setChangedCells(changed || []);
+      setExportText(exportStr);
     }
+    addLog("Skipped barcode entry");
+    setShowBarcodeModal(false);
+    setPendingResult(null);
   };
 
   const handleMappingsChange = (newMappings) => {
     setColumnMappings(newMappings);
+  };
+
+  // Save all settings to backend
+  const saveSettings = async () => {
+    try {
+      const settings = {
+        columnMappings,
+        defaultOperations,
+        priceThreshold,
+      };
+      await invoke("save_settings", { data: JSON.stringify(settings) });
+    } catch (e) {
+      console.error("Failed to save settings:", e);
+    }
   };
 
   return (
@@ -336,10 +409,6 @@ function App() {
         onPreviewUpdate={handlePreviewUpdate}
         onLogMessage={addLog}
         logs={logs}
-        missingBarcodes={missingBarcodes}
-        onBarcodeUpdate={handleBarcodeUpdate}
-        onBarcodeSkip={handleBarcodeSkip}
-        showBarcodePanel={showBarcodePanel}
         columnMappings={columnMappings}
         onMappingsChange={handleMappingsChange}
         onShowSifrarnik={() => setLeftPaneTab("sifrarnik")}
@@ -349,6 +418,18 @@ function App() {
         onDefaultOperationsChange={setDefaultOperations}
         priceThreshold={priceThreshold}
         onPriceThresholdChange={setPriceThreshold}
+        onSaveSettings={saveSettings}
+      />
+
+      <BarcodeModal
+        isOpen={showBarcodeModal}
+        emptyBarcodeItems={emptyBarcodeItems}
+        onSubmit={handleBarcodeModalSubmit}
+        onSkip={handleBarcodeModalSkip}
+        onClose={() => setShowBarcodeModal(false)}
+        previousBarcodes={invoiceFilename ? cachedBarcodes[invoiceFilename] : null}
+        invoiceFilename={invoiceFilename}
+        onUsePrevious={handleUsePreviousBarcodes}
       />
     </div>
   );

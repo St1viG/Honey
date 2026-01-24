@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { OperationsTab } from "./OperationsTab";
-import { BarcodePanel } from "./BarcodePanel";
 import { SettingsTab } from "./SettingsTab";
 import { useLanguage } from "../../i18n/LanguageContext";
 
@@ -13,10 +12,6 @@ export function BottomPanel({
   onPreviewUpdate,
   onLogMessage,
   logs,
-  missingBarcodes,
-  onBarcodeUpdate,
-  onBarcodeSkip,
-  showBarcodePanel,
   columnMappings,
   onMappingsChange,
   onShowSifrarnik,
@@ -26,6 +21,7 @@ export function BottomPanel({
   onDefaultOperationsChange,
   priceThreshold,
   onPriceThresholdChange,
+  onSaveSettings,
 }) {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("operations");
@@ -34,13 +30,6 @@ export function BottomPanel({
     { id: "operations", label: t.operations },
     { id: "settings", label: t.settings },
   ];
-
-  if (showBarcodePanel) {
-    tabs.splice(1, 0, {
-      id: "barcodes",
-      label: `${t.barcodes} (${missingBarcodes?.length || 0})`,
-    });
-  }
 
   return (
     <div className="bottom-panel">
@@ -70,13 +59,6 @@ export function BottomPanel({
             priceThreshold={priceThreshold}
           />
         )}
-        {activeTab === "barcodes" && showBarcodePanel && (
-          <BarcodePanel
-            missingBarcodes={missingBarcodes}
-            onBarcodeUpdate={onBarcodeUpdate}
-            onBarcodeSkip={onBarcodeSkip}
-          />
-        )}
         {activeTab === "settings" && (
           <SettingsTab
             invoice={invoice}
@@ -90,6 +72,7 @@ export function BottomPanel({
             onDefaultOperationsChange={onDefaultOperationsChange}
             priceThreshold={priceThreshold}
             onPriceThresholdChange={onPriceThresholdChange}
+            onSaveSettings={onSaveSettings}
           />
         )}
       </div>
