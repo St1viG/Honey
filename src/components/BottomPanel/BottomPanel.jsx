@@ -12,8 +12,6 @@ export function BottomPanel({
   onPreviewUpdate,
   onLogMessage,
   logs,
-  columnMappings,
-  onMappingsChange,
   onShowSifrarnik,
   operations,
   onOperationsChange,
@@ -53,7 +51,6 @@ export function BottomPanel({
             onPreviewUpdate={onPreviewUpdate}
             onLogMessage={onLogMessage}
             logs={logs}
-            columnMappings={columnMappings}
             operations={operations}
             onOperationsChange={onOperationsChange}
             priceThreshold={priceThreshold}
@@ -61,12 +58,9 @@ export function BottomPanel({
         )}
         {activeTab === "settings" && (
           <SettingsTab
-            invoice={invoice}
             sifrarnik={sifrarnik}
             sifrarnikName={sifrarnikName}
             sifrarnikTimestamp={sifrarnikTimestamp}
-            columnMappings={columnMappings}
-            onMappingsChange={onMappingsChange}
             onShowSifrarnik={onShowSifrarnik}
             defaultOperations={defaultOperations}
             onDefaultOperationsChange={onDefaultOperationsChange}

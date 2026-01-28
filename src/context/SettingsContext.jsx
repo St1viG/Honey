@@ -14,19 +14,16 @@ const defaultOperationsState = {
 };
 
 export function SettingsProvider({ children }) {
-  const [columnMappings, setColumnMappings] = useState({});
   const [operations, setOperations] = useState(defaultOperationsState);
   const [defaultOperations, setDefaultOperations] = useState(defaultOperationsState);
   const [priceThreshold, setPriceThreshold] = useState(67);
 
-  // Load settings from backend on mount
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const stored = await invoke("load_settings");
         if (stored) {
           const settings = JSON.parse(stored);
-          if (settings.columnMappings) setColumnMappings(settings.columnMappings);
           if (settings.defaultOperations) {
             setDefaultOperations(settings.defaultOperations);
             setOperations(settings.defaultOperations);
@@ -46,7 +43,6 @@ export function SettingsProvider({ children }) {
   const saveSettings = async () => {
     try {
       const settings = {
-        columnMappings,
         defaultOperations,
         priceThreshold,
       };
@@ -59,8 +55,6 @@ export function SettingsProvider({ children }) {
   return (
     <SettingsContext.Provider
       value={{
-        columnMappings,
-        setColumnMappings,
         operations,
         setOperations,
         defaultOperations,

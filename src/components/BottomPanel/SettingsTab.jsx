@@ -1,13 +1,9 @@
-import { useState } from "react";
 import { useLanguage } from "../../i18n/LanguageContext";
 
 export function SettingsTab({
-  invoice,
   sifrarnik,
   sifrarnikName,
   sifrarnikTimestamp,
-  columnMappings,
-  onMappingsChange,
   onShowSifrarnik,
   defaultOperations,
   onDefaultOperationsChange,
@@ -16,19 +12,13 @@ export function SettingsTab({
   onSaveSettings,
 }) {
   const { t, language, changeLanguage } = useLanguage();
-  const [saving, setSaving] = useState(false);
 
-  const sifrarnikHeaders = sifrarnik?.headers || [];
-  const invoiceHeaders = invoice?.headers || [];
-
-  // Format timestamp for display
   const formatTimestamp = (isoString) => {
     if (!isoString) return t.unknown;
     const date = new Date(isoString);
     return date.toLocaleString();
   };
 
-  // Operations list for default settings
   const operationsList = [
     { key: "updateNames", labelKey: "updateNames" },
     { key: "formatPrice4Dec", labelKey: "formatPrice4Dec" },
@@ -38,20 +28,6 @@ export function SettingsTab({
     { key: "swapCommasToDots", labelKey: "swapCommasToDots" },
     { key: "autoUpdatePrice", labelKey: "autoUpdatePrice" },
   ];
-
-  // Required mappings
-  const requiredMappings = [
-    { key: "sifra", labelKey: "sifraId" },
-    { key: "naziv", labelKey: "nazivName" },
-    { key: "barKod", labelKey: "barKodBarcode" },
-    { key: "cijena", labelKey: "cijenaPrice" },
-    { key: "jm", labelKey: "jmUnit" },
-  ];
-
-  const handleMappingChange = (key, value) => {
-    const newMappings = { ...columnMappings, [key]: value };
-    onMappingsChange(newMappings);
-  };
 
   const handleDefaultOperationChange = (key) => {
     onDefaultOperationsChange((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -71,79 +47,8 @@ export function SettingsTab({
     onSaveSettings();
   };
 
-  const handleSaveMappings = async () => {
-    setSaving(true);
-    try {
-      await onSaveSettings();
-    } catch (e) {
-      console.error("Failed to save mappings:", e);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div className="settings-tab">
-      <div className="settings-section">
-        <h3>{t.columnMappings}</h3>
-        <p className="settings-description">{t.columnMappingsDesc}</p>
-
-        {!sifrarnik && <p className="warning">{t.loadDatabaseFirst}</p>}
-
-        {sifrarnik && (
-          <>
-            <div className="mappings-grid">
-              <div className="mapping-header">
-                <span>{t.field}</span>
-                <span>{t.databaseColumn}</span>
-                <span>{t.invoiceColumn}</span>
-              </div>
-
-              {requiredMappings.map((mapping) => (
-                <div key={mapping.key} className="mapping-row">
-                  <label>{t[mapping.labelKey]}</label>
-
-                  <select
-                    value={columnMappings[`sifrarnik_${mapping.key}`] || ""}
-                    onChange={(e) =>
-                      handleMappingChange(`sifrarnik_${mapping.key}`, e.target.value)
-                    }
-                  >
-                    <option value="">{t.select}</option>
-                    {sifrarnikHeaders.map((header) => (
-                      <option key={header} value={header}>
-                        {header}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={columnMappings[`invoice_${mapping.key}`] || ""}
-                    onChange={(e) =>
-                      handleMappingChange(`invoice_${mapping.key}`, e.target.value)
-                    }
-                    disabled={!invoice}
-                  >
-                    <option value="">{t.select}</option>
-                    {invoiceHeaders.map((header) => (
-                      <option key={header} value={header}>
-                        {header}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-
-            <div className="settings-actions">
-              <button onClick={handleSaveMappings} disabled={saving}>
-                {saving ? t.saving : t.saveMappings}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-
       <div className="settings-section">
         <h3>{t.databaseInfo}</h3>
         {sifrarnik ? (

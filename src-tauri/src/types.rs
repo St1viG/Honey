@@ -3,6 +3,26 @@ use serde::{Serialize, Deserialize};
 pub type Row = IndexMap<String, String>;
 use std::sync::Mutex;
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct RemovedBarcode {
+    pub row_idx: usize,
+    pub sifra: String,
+    pub naziv: String,
+    pub original_barcode: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PriceUpdateItem {
+    pub row_idx: usize,
+    pub sifra: String,
+    pub naziv: String,
+    pub ukupna_cena: f64,
+    pub cena_mp: f64,
+    pub percentage: f64,
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Table {
     pub headers: Vec<String>,
@@ -68,12 +88,51 @@ impl Table{
         .and_then(|row| row.get("naziv").cloned())
     }
 
-    pub fn remove_duplicate_barcodes(&mut self){
-        for row in &mut self.rows{
-            if row["Bar kod"].contains(','){
-                row["Bar kod"] = "".to_string();
+    pub fn remove_duplicate_barcodes(&mut self) -> Vec<RemovedBarcode> {
+        let mut removed = Vec::new();
+        for (idx, row) in self.rows.iter_mut().enumerate() {
+            if let Some(barcode) = row.get("Bar kod") {
+                if barcode.contains(',') {
+                    removed.push(RemovedBarcode {
+                        row_idx: idx,
+                        sifra: row.get("Šifra artikla").cloned().unwrap_or_default(),
+                        naziv: row.get("Naziv artikla").cloned().unwrap_or_default(),
+                        original_barcode: barcode.clone(),
+                    });
+                    row.insert("Bar kod".to_string(), "".to_string());
+                }
             }
         }
+        removed
+    }
+
+    pub fn find_price_updates(&self, threshold: f64) -> Vec<PriceUpdateItem> {
+        let mut items = Vec::new();
+        for (idx, row) in self.rows.iter().enumerate() {
+            let ukupna_cena = row.get("Ukupna cena")
+                .and_then(|v| v.replace(',', ".").parse::<f64>().ok())
+                .unwrap_or(0.0);
+            let cena_mp = row.get("Cena MP")
+                .and_then(|v| v.replace(',', ".").parse::<f64>().ok())
+                .unwrap_or(0.0);
+
+            if cena_mp > 0.0 {
+                let percentage = (ukupna_cena / cena_mp) * 100.0;
+                let percentage_rounded = (percentage * 100.0).round() / 100.0;
+
+                if percentage_rounded > threshold {
+                    items.push(PriceUpdateItem {
+                        row_idx: idx,
+                        sifra: row.get("Šifra artikla").cloned().unwrap_or_default(),
+                        naziv: row.get("Naziv artikla").cloned().unwrap_or_default(),
+                        ukupna_cena,
+                        cena_mp,
+                        percentage: percentage_rounded,
+                    });
+                }
+            }
+        }
+        items
     }
 
     pub fn swap_all_commas_to_dots(&mut self){

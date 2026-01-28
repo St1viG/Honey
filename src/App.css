@@ -820,6 +820,75 @@ button.secondary:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
+/* Price update modal - wider */
+.modal-content.modal-wide {
+  max-width: 900px;
+}
+
+.price-update-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.price-update-table th,
+.price-update-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.price-update-table th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+.price-update-table .row-num {
+  width: 40px;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.price-update-table .naziv-cell {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price-update-table .number-cell {
+  text-align: right;
+  font-family: monospace;
+}
+
+.price-update-table .percentage-high {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.price-update-table .percentage-ok {
+  color: #51cf66;
+  font-weight: 600;
+}
+
+.price-update-table input {
+  width: 100px;
+  padding: 6px 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 12px;
+  text-align: right;
+}
+
+.price-update-table input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .modal-footer {
   padding: 16px 20px;
   border-top: 1px solid var(--border-color);

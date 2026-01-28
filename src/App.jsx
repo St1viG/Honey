@@ -4,6 +4,7 @@ import { Header } from "./components/Header";
 import { TableView } from "./components/TableView";
 import { BottomPanel } from "./components/BottomPanel/BottomPanel";
 import { BarcodeModal } from "./components/BarcodeModal";
+import { PriceUpdateModal } from "./components/PriceUpdateModal";
 import { useLanguage } from "./i18n/LanguageContext";
 import "./App.css";
 
@@ -22,13 +23,14 @@ function App() {
   // Barcode modal state
   const [showBarcodeModal, setShowBarcodeModal] = useState(false);
   const [emptyBarcodeItems, setEmptyBarcodeItems] = useState([]);
-  const [cachedBarcodes, setCachedBarcodes] = useState({}); // { invoiceFilename: { rowIdx: barcode } }
-  const [pendingResult, setPendingResult] = useState(null); // Store result while modal is open
+  const [cachedBarcodes, setCachedBarcodes] = useState({});
+  const [pendingResult, setPendingResult] = useState(null);
 
-  // Settings state
-  const [columnMappings, setColumnMappings] = useState({});
+  // Price update modal state
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [priceUpdateItems, setPriceUpdateItems] = useState([]);
 
-  // Operations state (lifted up to preserve across tab switches)
+  // Operations state
   const [operations, setOperations] = useState({
     updateNames: false,
     formatPrice4Dec: false,
@@ -39,7 +41,7 @@ function App() {
     autoUpdatePrice: false,
   });
 
-  // Default operations (which checkboxes are checked on app mount)
+  // Default operations
   const [defaultOperations, setDefaultOperations] = useState({
     updateNames: false,
     formatPrice4Dec: false,
@@ -116,7 +118,6 @@ function App() {
           setSifrarnik(table);
           setSifrarnikName(name);
           setSifrarnikTimestamp(timestamp);
-          // Load cached table into Rust backend state
           await invoke("set_database", { table });
           addLog("Loaded cached database");
         }
@@ -129,10 +130,9 @@ function App() {
         const stored = await invoke("load_settings");
         if (stored) {
           const settings = JSON.parse(stored);
-          if (settings.columnMappings) setColumnMappings(settings.columnMappings);
           if (settings.defaultOperations) {
             setDefaultOperations(settings.defaultOperations);
-            setOperations(settings.defaultOperations); // Apply defaults on mount
+            setOperations(settings.defaultOperations);
           }
           if (settings.priceThreshold !== undefined) {
             setPriceThreshold(settings.priceThreshold);
@@ -156,8 +156,8 @@ function App() {
     setInvoiceFilename(filename);
     setPreview(null);
     setChangedCells([]);
-    setMissingBarcodes([]);
-    setShowBarcodePanel(false);
+    setEmptyBarcodeItems([]);
+    setShowBarcodeModal(false);
     addLog(
       `Loaded invoice: ${filename} (${table.rows.length} rows, ${table.headers.length} columns)`,
     );
@@ -169,7 +169,6 @@ function App() {
     setSifrarnikName(filename);
     setSifrarnikTimestamp(timestamp);
 
-    // Persist to backend
     try {
       await invoke("save_sifrarnik", { data: JSON.stringify({ table, name: filename, timestamp }) });
       addLog(`Loaded and cached database: ${filename} (${table.rows.length} items)`);
@@ -178,73 +177,73 @@ function App() {
     }
   };
 
-  // Called when operations complete - may trigger barcode modal
-  const handlePreviewUpdate = (table, changed, emptyItems, exportStr, autoUpdateBarcodes) => {
+  // Called when operations complete - may trigger barcode or price modal
+  const handlePreviewUpdate = (table, changed, emptyItems, priceItems, exportStr, autoUpdateBarcodes) => {
     // If auto-update is enabled and there are empty items, try to fetch from sifrarnik
-    if (autoUpdateBarcodes && emptyItems && emptyItems.length > 0) {
-      const barcodeColumn = columnMappings.sifrarnik_barKod;
-      const sifraColumn = columnMappings.sifrarnik_sifra;
+    if (autoUpdateBarcodes && emptyItems && emptyItems.length > 0 && sifrarnik) {
+      // Static column names for sifrarnik
+      const barcodeColumn = "barkod";
+      const sifraColumn = "sifra";
 
-      if (!barcodeColumn || !sifraColumn) {
-        addLog(t.noBarcodeColumn);
-        // Fall through to show modal for manual entry
-      } else if (sifrarnik) {
-        // Try to auto-fetch barcodes
-        let fetchedCount = 0;
-        const updatedTable = { ...table, rows: [...table.rows] };
+      let fetchedCount = 0;
+      const updatedTable = { ...table, rows: [...table.rows] };
 
-        emptyItems.forEach((item) => {
-          const sifrarnikRow = sifrarnik.rows.find(
-            (r) => r[sifraColumn] === item.sifra
-          );
-          if (sifrarnikRow && sifrarnikRow[barcodeColumn]) {
-            updatedTable.rows[item.rowIdx] = {
-              ...updatedTable.rows[item.rowIdx],
-              "Bar kod": sifrarnikRow[barcodeColumn],
-            };
-            fetchedCount++;
-          }
-        });
-
-        if (fetchedCount === emptyItems.length) {
-          // All barcodes found
-          addLog(`${t.autoFetchSuccess}: ${fetchedCount} items`);
-          setPreview(updatedTable);
-          setChangedCells(changed || []);
-          setExportText(exportStr);
-          return;
-        } else if (fetchedCount > 0) {
-          addLog(`${t.autoFetchPartial}: ${fetchedCount}/${emptyItems.length}`);
-          table = updatedTable;
-          // Filter remaining empty items
-          emptyItems = emptyItems.filter((item) => {
-            const row = updatedTable.rows[item.rowIdx];
-            return !row["Bar kod"] || row["Bar kod"].trim() === "";
-          });
+      emptyItems.forEach((item) => {
+        const sifrarnikRow = sifrarnik.rows.find(
+          (r) => r[sifraColumn] === item.sifra
+        );
+        if (sifrarnikRow && sifrarnikRow[barcodeColumn]) {
+          updatedTable.rows[item.rowIdx] = {
+            ...updatedTable.rows[item.rowIdx],
+            "Bar kod": sifrarnikRow[barcodeColumn],
+          };
+          fetchedCount++;
         }
+      });
+
+      if (fetchedCount === emptyItems.length) {
+        addLog(`${t.autoFetchSuccess}: ${fetchedCount} items`);
+        table = updatedTable;
+        emptyItems = [];
+      } else if (fetchedCount > 0) {
+        addLog(`${t.autoFetchPartial}: ${fetchedCount}/${emptyItems.length}`);
+        table = updatedTable;
+        emptyItems = emptyItems.filter((item) => {
+          const row = updatedTable.rows[item.rowIdx];
+          return !row["Bar kod"] || row["Bar kod"].trim() === "";
+        });
       }
     }
 
-    // If there are still empty barcode items and auto-update is off, show modal
+    // If there are empty barcode items and auto-update is off, show barcode modal
     if (emptyItems && emptyItems.length > 0 && !autoUpdateBarcodes) {
       setEmptyBarcodeItems(emptyItems);
+      setPriceUpdateItems(priceItems || []);
       setPendingResult({ table, changed, exportStr });
       setShowBarcodeModal(true);
       return;
     }
 
-    // Normal flow - no modal needed
+    // If there are price update items, show price modal
+    if (priceItems && priceItems.length > 0) {
+      setPriceUpdateItems(priceItems);
+      setPendingResult({ table, changed, exportStr });
+      setShowPriceModal(true);
+      return;
+    }
+
+    // Normal flow
     setExportText(exportStr);
     setPreview(table);
     setChangedCells(changed || []);
   };
 
-  // Handle barcode modal submission
   const handleBarcodeModalSubmit = (barcodeInputs) => {
     if (!pendingResult) return;
 
     const { table, changed, exportStr } = pendingResult;
     const updatedTable = { ...table, rows: [...table.rows] };
+    const newChangedCells = [...(changed || [])];
     let updatedCount = 0;
 
     Object.entries(barcodeInputs).forEach(([rowIdx, barcode]) => {
@@ -253,11 +252,12 @@ function App() {
           ...updatedTable.rows[parseInt(rowIdx)],
           "Bar kod": barcode.trim(),
         };
+        // Add to changed cells for highlighting
+        newChangedCells.push({ row: parseInt(rowIdx), col: "Bar kod" });
         updatedCount++;
       }
     });
 
-    // Cache the entered barcodes for this invoice
     if (invoiceFilename && updatedCount > 0) {
       setCachedBarcodes((prev) => ({
         ...prev,
@@ -266,40 +266,89 @@ function App() {
     }
 
     addLog(`Applied ${updatedCount} barcodes manually`);
-    setPreview(updatedTable);
-    setChangedCells(changed || []);
-    setExportText(exportStr);
     setShowBarcodeModal(false);
-    setPendingResult(null);
+
+    // Check if there are price updates to show
+    if (priceUpdateItems && priceUpdateItems.length > 0) {
+      setPendingResult({ table: updatedTable, changed: newChangedCells, exportStr });
+      setShowPriceModal(true);
+    } else {
+      setPreview(updatedTable);
+      setChangedCells(newChangedCells);
+      setExportText(exportStr);
+      setPendingResult(null);
+    }
   };
 
-  // Handle using previous barcodes
   const handleUsePreviousBarcodes = (previousBarcodes) => {
     handleBarcodeModalSubmit(previousBarcodes);
   };
 
-  // Handle skip all in modal
   const handleBarcodeModalSkip = () => {
+    if (!pendingResult) return;
+
+    const { table, changed, exportStr } = pendingResult;
+    addLog("Skipped barcode entry");
+    setShowBarcodeModal(false);
+
+    // Check if there are price updates to show
+    if (priceUpdateItems && priceUpdateItems.length > 0) {
+      setShowPriceModal(true);
+    } else {
+      setPreview(table);
+      setChangedCells(changed || []);
+      setExportText(exportStr);
+      setPendingResult(null);
+    }
+  };
+
+  // Price update modal handlers
+  const handlePriceModalSubmit = (priceInputs) => {
+    if (!pendingResult) return;
+
+    const { table, changed, exportStr } = pendingResult;
+    const updatedTable = { ...table, rows: [...table.rows] };
+    const newChangedCells = [...(changed || [])];
+    let updatedCount = 0;
+
+    Object.entries(priceInputs).forEach(([rowIdx, newPrice]) => {
+      const parsed = parseFloat(newPrice);
+      if (parsed && parsed > 0) {
+        updatedTable.rows[parseInt(rowIdx)] = {
+          ...updatedTable.rows[parseInt(rowIdx)],
+          "Cena MP": parsed.toFixed(2),
+        };
+        // Add to changed cells for highlighting
+        newChangedCells.push({ row: parseInt(rowIdx), col: "Cena MP" });
+        updatedCount++;
+      }
+    });
+
+    addLog(`Applied ${updatedCount} price updates manually`);
+    setPreview(updatedTable);
+    setChangedCells(newChangedCells);
+    setExportText(exportStr);
+    setShowPriceModal(false);
+    setPendingResult(null);
+    setPriceUpdateItems([]);
+  };
+
+  const handlePriceModalSkip = () => {
     if (pendingResult) {
       const { table, changed, exportStr } = pendingResult;
       setPreview(table);
       setChangedCells(changed || []);
       setExportText(exportStr);
     }
-    addLog("Skipped barcode entry");
-    setShowBarcodeModal(false);
+    addLog("Skipped price updates");
+    setShowPriceModal(false);
     setPendingResult(null);
+    setPriceUpdateItems([]);
   };
 
-  const handleMappingsChange = (newMappings) => {
-    setColumnMappings(newMappings);
-  };
-
-  // Save all settings to backend
   const saveSettings = async () => {
     try {
       const settings = {
-        columnMappings,
         defaultOperations,
         priceThreshold,
       };
@@ -409,8 +458,6 @@ function App() {
         onPreviewUpdate={handlePreviewUpdate}
         onLogMessage={addLog}
         logs={logs}
-        columnMappings={columnMappings}
-        onMappingsChange={handleMappingsChange}
         onShowSifrarnik={() => setLeftPaneTab("sifrarnik")}
         operations={operations}
         onOperationsChange={setOperations}
@@ -430,6 +477,14 @@ function App() {
         previousBarcodes={invoiceFilename ? cachedBarcodes[invoiceFilename] : null}
         invoiceFilename={invoiceFilename}
         onUsePrevious={handleUsePreviousBarcodes}
+      />
+
+      <PriceUpdateModal
+        isOpen={showPriceModal}
+        priceUpdateItems={priceUpdateItems}
+        onSubmit={handlePriceModalSubmit}
+        onSkip={handlePriceModalSkip}
+        onClose={() => setShowPriceModal(false)}
       />
     </div>
   );

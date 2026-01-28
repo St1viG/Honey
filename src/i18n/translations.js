@@ -104,6 +104,17 @@ export const translations = {
     cijenaPrice: "Cijena (Price)",
     jmUnit: "JM (Unit)",
 
+    // Price update modal
+    priceUpdates: "Price Updates",
+    itemsNeedPriceUpdate: "items above threshold",
+    ukupnaCena: "Ukupna Cena",
+    currentCenaMp: "Current Cena MP",
+    currentPercentage: "Current %",
+    newCenaMp: "New Cena MP",
+    newPercentage: "New %",
+    enterNewPrice: "Enter new price...",
+    applyPrices: "Apply Prices",
+
     // Misc
     rows: "rows",
     columns: "columns",
@@ -217,6 +228,17 @@ export const translations = {
     barKodBarcode: "Bar kod",
     cijenaPrice: "Cijena (Cena)",
     jmUnit: "JM (Jedinica mere)",
+
+    // Price update modal
+    priceUpdates: "Ažuriranje cena",
+    itemsNeedPriceUpdate: "artikala iznad praga",
+    ukupnaCena: "Ukupna Cena",
+    currentCenaMp: "Trenutna Cena MP",
+    currentPercentage: "Trenutni %",
+    newCenaMp: "Nova Cena MP",
+    newPercentage: "Novi %",
+    enterNewPrice: "Unesite novu cenu...",
+    applyPrices: "Primeni cene",
 
     // Misc
     rows: "redova",

@@ -10,7 +10,6 @@ export function OperationsTab({
   onPreviewUpdate,
   onLogMessage,
   logs,
-  columnMappings,
   operations,
   onOperationsChange,
   priceThreshold,
@@ -33,31 +32,40 @@ export function OperationsTab({
       const result = await invoke("apply_operations", {
         table: invoice,
         operations,
-        mappings: columnMappings,
+        priceThreshold,
       });
 
-      // Find items with empty barcodes
-      const emptyBarcodeItems = result.table.rows
-        .map((row, idx) => ({
-          rowIdx: idx,
-          sifra: row["Šifra artikla"] || row["sifra"] || "",
-          naziv: row["Naziv artikla"] || row["naziv"] || "",
-          barcode: row["Bar kod"] || row["barKod"] || "",
-        }))
-        .filter((item) => !item.barcode || item.barcode.trim() === "");
+      // Use removedBarcodes from backend - items that had multiple barcodes (commas) removed
+      const emptyBarcodeItems = operations.removeDuplicateBarcodes
+        ? result.removedBarcodes.map((item) => ({
+            rowIdx: item.rowIdx,
+            sifra: item.sifra,
+            naziv: item.naziv,
+            originalBarcode: item.originalBarcode,
+          }))
+        : [];
+
+      // Use priceUpdateItems from backend - items above price threshold
+      const priceItems = operations.autoUpdatePrice
+        ? result.priceUpdateItems.map((item) => ({
+            rowIdx: item.rowIdx,
+            sifra: item.sifra,
+            naziv: item.naziv,
+            ukupnaCena: item.ukupnaCena,
+            cenaMp: item.cenaMp,
+            percentage: item.percentage,
+          }))
+        : [];
 
       onPreviewUpdate(
         result.table,
         result.changedCells,
         emptyBarcodeItems,
+        priceItems,
         result.exportStr,
         operations.autoUpdateBarKod,
       );
 
-      // Log results
-      // if (result.logs) {
-      //   result.logs.forEach((log) => onLogMessage(log));
-      // }
       onLogMessage("Updated " + result.logs + " cells");
     } catch (e) {
       onLogMessage(`Error: ${e}`);
@@ -99,7 +107,6 @@ export function OperationsTab({
         <h3>{t.operationsTitle}</h3>
         <div className="operations-list">
           {operationsList.map((op) => {
-            // Special handling for autoUpdatePrice to show dynamic threshold
             const label = op.key === "autoUpdatePrice"
               ? `${t.autoUpdatePrice.replace(">67%", `>${priceThreshold}%`)}`
               : t[op.labelKey];
