@@ -484,7 +484,6 @@ function App() {
         priceUpdateItems={priceUpdateItems}
         onSubmit={handlePriceModalSubmit}
         onSkip={handlePriceModalSkip}
-        onClose={() => setShowPriceModal(false)}
       />
     </div>
   );

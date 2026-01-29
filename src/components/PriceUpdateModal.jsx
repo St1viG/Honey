@@ -6,7 +6,6 @@ export function PriceUpdateModal({
   priceUpdateItems,
   onSubmit,
   onSkip,
-  onClose,
 }) {
   const { t } = useLanguage();
   const [priceInputs, setPriceInputs] = useState({});
