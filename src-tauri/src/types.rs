@@ -46,12 +46,13 @@ impl Table{
 
     pub fn format_kol_i_mp_cena_2dec(&mut self){
         for row in &mut self.rows{
-            if let Some(val) = row.get_mut("Količina") {
-                if let Ok(n) = val.parse::<f64>() {
-                    let excel_rounded = (n * 100.0).round() / 100.0;
-                    *val = format!("{:.2}", excel_rounded);
-                }
-            }
+            // automation shouldnt format quantity field to 2 decimals, should stay as a int
+            // if let Some(val) = row.get_mut("Količina") {
+            //     if let Ok(n) = val.parse::<f64>() {
+            //         let excel_rounded = (n * 100.0).round() / 100.0;
+            //         *val = format!("{:.2}", excel_rounded);
+            //     }
+            // }
             if let Some(val) = row.get_mut("Cena MP") {
                 if let Ok(n) = val.parse::<f64>() {
                     let excel_rounded = (n * 100.0).round() / 100.0;
@@ -92,7 +93,8 @@ impl Table{
         let mut removed = Vec::new();
         for (idx, row) in self.rows.iter_mut().enumerate() {
             if let Some(barcode) = row.get("Bar kod") {
-                if barcode.contains(',') {
+                // if barcode.len() > 13{
+                if barcode.contains(',') || barcode.contains('.'){
                     removed.push(RemovedBarcode {
                         row_idx: idx,
                         sifra: row.get("Šifra artikla").cloned().unwrap_or_default(),
@@ -178,7 +180,7 @@ pub fn table_to_str(transformed: &Table) -> Result<String, String> {
     let mut output: String = String::new();
     for row in &table.rows{
         let line = format!(
-            "{},{},kom,PDVOS,{},{},{},{},{}", 
+            "{},{},KOM,PDVOS,{},{},{},{},{}", 
             row.get("Šifra artikla").map_or("", |v| v), 
             row.get("Naziv artikla").map_or("", |v| v),
             row.get("Bar kod").map_or("", |v| v),
