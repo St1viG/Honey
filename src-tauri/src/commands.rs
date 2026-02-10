@@ -1,4 +1,4 @@
-use crate::types::{Table, AppState, CellAddress, RemovedBarcode, PriceUpdateItem, table_to_str};
+use crate::types::{Table, AppState, CellAddress, RemovedBarcode, PriceUpdateItem, DuplicateNameItem, table_to_str};
 use crate::exel::read_exel;
 use tauri::{State, Manager};
 use std::path::PathBuf;
@@ -23,6 +23,7 @@ pub struct Operations {
     pub auto_update_bar_kod: bool,
     pub format_col_and_mp_price_2_dec: bool,
     pub auto_update_price: bool,
+    pub detect_duplicate_names: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -33,6 +34,7 @@ pub struct OperationResult {
     pub missing_barcodes: Vec<MissingBarcode>,
     pub removed_barcodes: Vec<RemovedBarcode>,
     pub price_update_items: Vec<PriceUpdateItem>,
+    pub duplicate_name_items: Vec<DuplicateNameItem>,
     pub logs: usize,
     pub export_str: String
 }
@@ -56,11 +58,18 @@ pub fn apply_operations(table: Table, operations: Operations, price_threshold: f
     let mut transformed = table.clone();
     let mut removed_barcodes = Vec::new();
     let mut price_update_items = Vec::new();
+    let mut duplicate_name_items = Vec::new();
 
     if operations.update_names {
         let database = state.database.lock().unwrap();
         if let Some(ref db) = *database {
             transformed = transformed.update_names(db);
+        }
+    }
+    if operations.detect_duplicate_names {
+        let database = state.database.lock().unwrap();
+        if let Some(ref db) = *database {
+            duplicate_name_items = transformed.find_duplicate_names(db);
         }
     }
     if operations.format_col_and_mp_price_2_dec {
@@ -89,6 +98,7 @@ pub fn apply_operations(table: Table, operations: Operations, price_threshold: f
         missing_barcodes: vec![],
         removed_barcodes,
         price_update_items,
+        duplicate_name_items,
         logs: changed_cells.len(),
         export_str: output_str,
     })

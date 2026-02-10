@@ -14,6 +14,15 @@ pub struct RemovedBarcode {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct DuplicateNameItem {
+    pub row_idx: usize,
+    pub sifra: String,
+    pub naziv: String,
+    pub db_sifra: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct PriceUpdateItem {
     pub row_idx: usize,
     pub sifra: String,
@@ -108,6 +117,39 @@ impl Table{
         removed
     }
 
+    pub fn find_duplicate_names(&self, database: &Table) -> Vec<DuplicateNameItem> {
+        use std::collections::HashMap;
+        // Build name -> sifra lookup from database: O(m)
+        let db_by_name: HashMap<&str, &str> = database.rows.iter()
+            .filter_map(|row| {
+                let naziv = row.get("naziv")?;
+                let sifra = row.get("sifra")?;
+                Some((naziv.as_str(), sifra.as_str()))
+            })
+            .collect();
+
+        let mut items = Vec::new();
+        for (idx, row) in self.rows.iter().enumerate() {
+            let invoice_naziv = match row.get("Naziv artikla") {
+                Some(v) if !v.is_empty() => v,
+                _ => continue,
+            };
+            let invoice_sifra = row.get("Šifra artikla").map(|s| s.as_str()).unwrap_or("");
+
+            if let Some(&db_sifra) = db_by_name.get(invoice_naziv.as_str()) {
+                if invoice_sifra != db_sifra {
+                    items.push(DuplicateNameItem {
+                        row_idx: idx,
+                        sifra: invoice_sifra.to_string(),
+                        naziv: invoice_naziv.clone(),
+                        db_sifra: db_sifra.to_string(),
+                    });
+                }
+            }
+        }
+        items
+    }
+
     pub fn find_price_updates(&self, threshold: f64) -> Vec<PriceUpdateItem> {
         let mut items = Vec::new();
         for (idx, row) in self.rows.iter().enumerate() {
@@ -190,7 +232,11 @@ pub fn table_to_str(transformed: &Table) -> Result<String, String> {
             row.get("Cena MP").map_or("", |v| v)
         );
         output.push_str(&line);
-        output.push_str("\n");
+        if cfg!(target_os = "windows") {
+            output.push_str("\r\n");
+        } else {
+            output.push_str("\n");
+        }
     }
     Ok(output)
 }

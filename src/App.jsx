@@ -4,6 +4,7 @@ import { Header } from "./components/Header";
 import { TableView } from "./components/TableView";
 import { BottomPanel } from "./components/BottomPanel/BottomPanel";
 import { BarcodeModal } from "./components/BarcodeModal";
+import { NameUpdateModal } from "./components/NameUpdateModal";
 import { PriceUpdateModal } from "./components/PriceUpdateModal";
 import { useLanguage } from "./i18n/LanguageContext";
 import "./App.css";
@@ -26,6 +27,10 @@ function App() {
   const [cachedBarcodes, setCachedBarcodes] = useState({});
   const [pendingResult, setPendingResult] = useState(null);
 
+  // Duplicate name modal state
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [duplicateNameItems, setDuplicateNameItems] = useState([]);
+
   // Price update modal state
   const [showPriceModal, setShowPriceModal] = useState(false);
   const [priceUpdateItems, setPriceUpdateItems] = useState([]);
@@ -39,6 +44,7 @@ function App() {
     autoUpdateBarKod: false,
     formatColAndMpPrice2Dec: false,
     autoUpdatePrice: false,
+    detectDuplicateNames: false,
   });
 
   // Default operations
@@ -50,6 +56,7 @@ function App() {
     autoUpdateBarKod: false,
     formatColAndMpPrice2Dec: false,
     autoUpdatePrice: false,
+    detectDuplicateNames: false,
   });
 
   // Price threshold setting
@@ -177,8 +184,8 @@ function App() {
     }
   };
 
-  // Called when operations complete - may trigger barcode or price modal
-  const handlePreviewUpdate = (table, changed, emptyItems, priceItems, exportStr, autoUpdateBarcodes) => {
+  // Called when operations complete - may trigger barcode, name, or price modal
+  const handlePreviewUpdate = (table, changed, emptyItems, nameItems, priceItems, exportStr, autoUpdateBarcodes) => {
     // If auto-update is enabled and there are empty items, try to fetch from sifrarnik
     if (autoUpdateBarcodes && emptyItems && emptyItems.length > 0 && sifrarnik) {
       // Static column names for sifrarnik
@@ -215,18 +222,25 @@ function App() {
       }
     }
 
-    // If there are empty barcode items and auto-update is off, show barcode modal
+    // Store items for the modal chain
+    setDuplicateNameItems(nameItems || []);
+    setPriceUpdateItems(priceItems || []);
+
+    // Modal chain: barcodes → duplicate names → prices
     if (emptyItems && emptyItems.length > 0 && !autoUpdateBarcodes) {
       setEmptyBarcodeItems(emptyItems);
-      setPriceUpdateItems(priceItems || []);
       setPendingResult({ table, changed, exportStr });
       setShowBarcodeModal(true);
       return;
     }
 
-    // If there are price update items, show price modal
+    if (nameItems && nameItems.length > 0) {
+      setPendingResult({ table, changed, exportStr });
+      setShowNameModal(true);
+      return;
+    }
+
     if (priceItems && priceItems.length > 0) {
-      setPriceUpdateItems(priceItems);
       setPendingResult({ table, changed, exportStr });
       setShowPriceModal(true);
       return;
@@ -268,8 +282,11 @@ function App() {
     addLog(`Applied ${updatedCount} barcodes manually`);
     setShowBarcodeModal(false);
 
-    // Check if there are price updates to show
-    if (priceUpdateItems && priceUpdateItems.length > 0) {
+    // Chain: next check duplicate names, then prices
+    if (duplicateNameItems && duplicateNameItems.length > 0) {
+      setPendingResult({ table: updatedTable, changed: newChangedCells, exportStr });
+      setShowNameModal(true);
+    } else if (priceUpdateItems && priceUpdateItems.length > 0) {
       setPendingResult({ table: updatedTable, changed: newChangedCells, exportStr });
       setShowPriceModal(true);
     } else {
@@ -291,10 +308,67 @@ function App() {
     addLog("Skipped barcode entry");
     setShowBarcodeModal(false);
 
-    // Check if there are price updates to show
+    // Chain: next check duplicate names, then prices
+    if (duplicateNameItems && duplicateNameItems.length > 0) {
+      setShowNameModal(true);
+    } else if (priceUpdateItems && priceUpdateItems.length > 0) {
+      setShowPriceModal(true);
+    } else {
+      setPreview(table);
+      setChangedCells(changed || []);
+      setExportText(exportStr);
+      setPendingResult(null);
+    }
+  };
+
+  // Name update modal handlers
+  const handleNameModalSubmit = (nameInputs) => {
+    if (!pendingResult) return;
+
+    const { table, changed, exportStr } = pendingResult;
+    const updatedTable = { ...table, rows: [...table.rows] };
+    const newChangedCells = [...(changed || [])];
+    let updatedCount = 0;
+
+    Object.entries(nameInputs).forEach(([rowIdx, newName]) => {
+      if (newName && newName.trim()) {
+        updatedTable.rows[parseInt(rowIdx)] = {
+          ...updatedTable.rows[parseInt(rowIdx)],
+          "Naziv artikla": newName.trim(),
+        };
+        newChangedCells.push({ row: parseInt(rowIdx), col: "Naziv artikla" });
+        updatedCount++;
+      }
+    });
+
+    addLog(`Applied ${updatedCount} name updates`);
+    setShowNameModal(false);
+    setDuplicateNameItems([]);
+
+    // Chain: next check prices
+    if (priceUpdateItems && priceUpdateItems.length > 0) {
+      setPendingResult({ table: updatedTable, changed: newChangedCells, exportStr });
+      setShowPriceModal(true);
+    } else {
+      setPreview(updatedTable);
+      setChangedCells(newChangedCells);
+      setExportText(exportStr);
+      setPendingResult(null);
+    }
+  };
+
+  const handleNameModalSkip = () => {
+    if (!pendingResult) return;
+
+    addLog("Skipped name updates");
+    setShowNameModal(false);
+    setDuplicateNameItems([]);
+
+    // Chain: next check prices
     if (priceUpdateItems && priceUpdateItems.length > 0) {
       setShowPriceModal(true);
     } else {
+      const { table, changed, exportStr } = pendingResult;
       setPreview(table);
       setChangedCells(changed || []);
       setExportText(exportStr);
@@ -477,6 +551,13 @@ function App() {
         previousBarcodes={invoiceFilename ? cachedBarcodes[invoiceFilename] : null}
         invoiceFilename={invoiceFilename}
         onUsePrevious={handleUsePreviousBarcodes}
+      />
+
+      <NameUpdateModal
+        isOpen={showNameModal}
+        duplicateNameItems={duplicateNameItems}
+        onSubmit={handleNameModalSubmit}
+        onSkip={handleNameModalSkip}
       />
 
       <PriceUpdateModal

@@ -3,16 +3,24 @@ import { translations } from "./translations";
 
 const LanguageContext = createContext();
 
-export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState("en");
+function getInitialTheme() {
+  const saved = localStorage.getItem("theme");
+  return saved === "light" ? "light" : "dark";
+}
 
-  // Load saved language on mount
+function getInitialLanguage() {
+  const saved = localStorage.getItem("language");
+  return saved && translations[saved] ? saved : "en";
+}
+
+export function LanguageProvider({ children }) {
+  const [language, setLanguage] = useState(getInitialLanguage);
+  const [theme, setTheme] = useState(getInitialTheme);
+
+  // Apply theme to DOM on mount and when it changes
   useEffect(() => {
-    const saved = localStorage.getItem("language");
-    if (saved && translations[saved]) {
-      setLanguage(saved);
-    }
-  }, []);
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   // Save language when changed
   const changeLanguage = (lang) => {
@@ -20,10 +28,17 @@ export function LanguageProvider({ children }) {
     localStorage.setItem("language", lang);
   };
 
+  // Save theme when changed
+  const changeTheme = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.dataset.theme = newTheme;
+  };
+
   const t = translations[language];
 
   return (
-    <LanguageContext.Provider value={{ language, changeLanguage, t }}>
+    <LanguageContext.Provider value={{ language, changeLanguage, theme, changeTheme, t }}>
       {children}
     </LanguageContext.Provider>
   );

@@ -1,4 +1,4 @@
-use std::{fs::File, path::Path};
+use std::{fs::File};
 use std::io::Write;
 
 use calamine::*;
@@ -37,7 +37,7 @@ pub fn read_exel(path: &str)-> Result<Table, String>{
 fn cell_to_string(cell: &Data) -> String {
     match cell {
         Data::Empty => String::new(),
-        Data::String(s) => s.clone(),
+        Data::String(s) => s.clone().trim_end().to_owned(),
         Data::Int(i) => i.to_string(),
         Data::Float(f) => {
             if (f.round() - f).abs() < 0.0001 {

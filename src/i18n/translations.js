@@ -1,7 +1,7 @@
 export const translations = {
   en: {
     // Header
-    appTitle: "Petric Automation",
+    appTitle: "Honey",
     loadInvoice: "Load Invoice",
     loadDatabase: "Load Database",
     replaceDatabase: "Replace Database",
@@ -28,8 +28,9 @@ export const translations = {
     formatPrice4Dec: "Format prices to 4 decimals",
     formatColAndMpPrice2Dec: "Format quantity and MP price to 2 decimals",
     removeDuplicateBarcodes: "Remove duplicate barcodes",
-    autoUpdateBarKod: "Auto-update barcodes (opens panel for missing)",
+    autoUpdateBarKod: "Auto-update barcodes",
     swapCommasToDots: "Swap commas to dots",
+    detectDuplicateNames: "Detect duplicate names",
     autoUpdatePrice: "Update prices (>67%)",
     apply: "Apply",
     processing: "Processing...",
@@ -42,7 +43,8 @@ export const translations = {
 
     // Barcodes panel
     barcodesTitle: "Missing Barcodes",
-    barcodesDescription: "Enter barcodes for items that couldn't be matched automatically.",
+    barcodesDescription:
+      "Enter barcodes for items that couldn't be matched automatically.",
     itemCode: "Item Code",
     itemName: "Item Name",
     barcode: "Barcode",
@@ -57,16 +59,19 @@ export const translations = {
     enterBarcode: "Enter barcode...",
     applyBarcodes: "Apply Barcodes",
     previousBarcodesFound: "Previous Barcodes Found",
-    previousBarcodesDesc: "You've entered barcodes for this invoice before. Would you like to use the previous values or enter new ones?",
+    previousBarcodesDesc:
+      "You've entered barcodes for this invoice before. Would you like to use the previous values or enter new ones?",
     usePrevious: "Use Previous",
     enterNew: "Enter New",
-    noBarcodeColumn: "No barcode column found in database. Please configure column mappings in Settings.",
+    noBarcodeColumn:
+      "No barcode column found in database. Please configure column mappings in Settings.",
     autoFetchSuccess: "Auto-fetched barcodes from database",
     autoFetchPartial: "Some barcodes couldn't be found in database",
 
     // Settings
     columnMappings: "Column Mappings",
-    columnMappingsDesc: "Connect database columns to invoice columns. This tells the app which columns correspond to each other.",
+    columnMappingsDesc:
+      "Connect database columns to invoice columns. This tells the app which columns correspond to each other.",
     loadDatabaseFirst: "Load a database first to configure mappings.",
     field: "Field",
     databaseColumn: "Database Column",
@@ -82,16 +87,25 @@ export const translations = {
     items: "Items",
     unknown: "Unknown",
     viewDatabase: "View Database",
-    noDatabaseLoadedMsg: "No database loaded. Load one using the button in the header.",
+    noDatabaseLoadedMsg:
+      "No database loaded. Load one using the button in the header.",
 
     // Settings - Default operations
     defaultOperations: "Default Operations",
-    defaultOperationsDesc: "Select which operations should be checked by default when the app starts.",
+    defaultOperationsDesc:
+      "Select which operations should be checked by default when the app starts.",
     saveDefaults: "Save Defaults",
 
     // Settings - Price threshold
     priceThreshold: "Price Update Threshold",
-    priceThresholdDesc: "Minimum percentage difference required to auto-update prices.",
+    priceThresholdDesc:
+      "Minimum percentage difference required to auto-update prices.",
+
+    // Settings - Theme
+    theme: "Theme",
+    themeDesc: "Choose between dark and light appearance.",
+    dark: "Dark",
+    light: "Light",
 
     // Settings - Language
     language: "Language",
@@ -103,6 +117,14 @@ export const translations = {
     barKodBarcode: "Bar Kod (Barcode)",
     cijenaPrice: "Cijena (Price)",
     jmUnit: "JM (Unit)",
+
+    // Duplicate name modal
+    duplicateNames: "Duplicate Names",
+    itemsHaveDuplicateNames: "items have duplicate names",
+    dbItemCode: "DB Item Code",
+    newName: "New Name",
+    enterNewName: "Enter new name...",
+    applyNames: "Apply Names",
 
     // Price update modal
     priceUpdates: "Price Updates",
@@ -126,7 +148,7 @@ export const translations = {
 
   sr: {
     // Header
-    appTitle: "Petric Automatizacija",
+    appTitle: "Honey",
     loadInvoice: "Učitaj fakturu",
     loadDatabase: "Učitaj šifarnik",
     replaceDatabase: "Zameni šifarnik",
@@ -153,8 +175,9 @@ export const translations = {
     formatPrice4Dec: "Formatiraj cene na 4 decimale",
     formatColAndMpPrice2Dec: "Formatiraj količinu i MP cenu na 2 decimale",
     removeDuplicateBarcodes: "Ukloni duple bar kodove",
-    autoUpdateBarKod: "Auto-ažuriraj bar kodove (otvara panel za nedostajuće)",
+    autoUpdateBarKod: "Auto-ažuriraj bar kodove",
     swapCommasToDots: "Zameni zareze tačkama",
+    detectDuplicateNames: "Otkrij duple nazive",
     autoUpdatePrice: "Ažuriraj cene (>67%)",
     apply: "Primeni",
     processing: "Obrada...",
@@ -167,7 +190,8 @@ export const translations = {
 
     // Barcodes panel
     barcodesTitle: "Nedostajući bar kodovi",
-    barcodesDescription: "Unesite bar kodove za artikle koji nisu automatski pronađeni.",
+    barcodesDescription:
+      "Unesite bar kodove za artikle koji nisu automatski pronađeni.",
     itemCode: "Šifra artikla",
     itemName: "Naziv artikla",
     barcode: "Bar kod",
@@ -182,17 +206,21 @@ export const translations = {
     enterBarcode: "Unesite bar kod...",
     applyBarcodes: "Primeni bar kodove",
     previousBarcodesFound: "Pronađeni prethodni bar kodovi",
-    previousBarcodesDesc: "Već ste uneli bar kodove za ovu fakturu. Da li želite da koristite prethodne vrednosti ili da unesete nove?",
+    previousBarcodesDesc:
+      "Već ste uneli bar kodove za ovu fakturu. Da li želite da koristite prethodne vrednosti ili da unesete nove?",
     usePrevious: "Koristi prethodne",
     enterNew: "Unesi nove",
-    noBarcodeColumn: "Kolona bar koda nije pronađena u šifarniku. Molimo konfigurišite mapiranje kolona u Podešavanjima.",
+    noBarcodeColumn:
+      "Kolona bar koda nije pronađena u šifarniku. Molimo konfigurišite mapiranje kolona u Podešavanjima.",
     autoFetchSuccess: "Bar kodovi automatski preuzeti iz šifarnika",
     autoFetchPartial: "Neki bar kodovi nisu pronađeni u šifarniku",
 
     // Settings
     columnMappings: "Mapiranje kolona",
-    columnMappingsDesc: "Povežite kolone šifarnika sa kolonama fakture. Ovo govori aplikaciji koje kolone odgovaraju jedna drugoj.",
-    loadDatabaseFirst: "Prvo učitajte šifarnik da biste konfigurisali mapiranje.",
+    columnMappingsDesc:
+      "Povežite kolone šifarnika sa kolonama fakture. Ovo govori aplikaciji koje kolone odgovaraju jedna drugoj.",
+    loadDatabaseFirst:
+      "Prvo učitajte šifarnik da biste konfigurisali mapiranje.",
     field: "Polje",
     databaseColumn: "Kolona šifarnika",
     invoiceColumn: "Kolona fakture",
@@ -207,16 +235,25 @@ export const translations = {
     items: "Stavki",
     unknown: "Nepoznato",
     viewDatabase: "Prikaži šifarnik",
-    noDatabaseLoadedMsg: "Šifarnik nije učitan. Učitajte ga pomoću dugmeta u zaglavlju.",
+    noDatabaseLoadedMsg:
+      "Šifarnik nije učitan. Učitajte ga pomoću dugmeta u zaglavlju.",
 
     // Settings - Default operations
     defaultOperations: "Podrazumevane operacije",
-    defaultOperationsDesc: "Izaberite koje operacije treba da budu označene po podrazumevanom kada se aplikacija pokrene.",
+    defaultOperationsDesc:
+      "Izaberite koje operacije treba da budu označene po podrazumevanom kada se aplikacija pokrene.",
     saveDefaults: "Sačuvaj podrazumevano",
 
     // Settings - Price threshold
     priceThreshold: "Prag za ažuriranje cena",
-    priceThresholdDesc: "Minimalna procentualna razlika potrebna za automatsko ažuriranje cena.",
+    priceThresholdDesc:
+      "Minimalna procentualna razlika potrebna za automatsko ažuriranje cena.",
+
+    // Settings - Theme
+    theme: "Tema",
+    themeDesc: "Izaberite između tamnog i svetlog izgleda.",
+    dark: "Tamna",
+    light: "Svetla",
 
     // Settings - Language
     language: "Jezik",
@@ -228,6 +265,14 @@ export const translations = {
     barKodBarcode: "Bar kod",
     cijenaPrice: "Cijena (Cena)",
     jmUnit: "JM (Jedinica mere)",
+
+    // Duplicate name modal
+    duplicateNames: "Dupli nazivi",
+    itemsHaveDuplicateNames: "artikala ima duple nazive",
+    dbItemCode: "Šifra iz šifarnika",
+    newName: "Novi naziv",
+    enterNewName: "Unesite novi naziv...",
+    applyNames: "Primeni nazive",
 
     // Price update modal
     priceUpdates: "Ažuriranje cena",

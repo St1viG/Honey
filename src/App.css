@@ -28,6 +28,59 @@
   background-color: var(--bg-primary);
 }
 
+/* Light "Honey" theme */
+[data-theme="light"] {
+  --bg-primary: #faf7f2;
+  --bg-secondary: #f3ede3;
+  --bg-tertiary: #ede7db;
+  --bg-hover: #e4dccf;
+  --border-color: #d4c9b8;
+  --text-primary: #3d3929;
+  --text-secondary: #8a7e6b;
+  --accent: #c8960c;
+  --accent-hover: #b5870a;
+  --success: #2e8b6e;
+  --warning: #a07c1c;
+  --error: #c53030;
+  --highlight: rgba(200, 150, 12, 0.12);
+  --modal-overlay: rgba(60, 50, 30, 0.35);
+  --modal-shadow: 0 8px 32px rgba(60, 50, 30, 0.18);
+  --tooltip-shadow: 0 4px 12px rgba(60, 50, 30, 0.15);
+}
+
+[data-theme="light"] .price-update-table .percentage-high {
+  color: #c53030;
+}
+
+[data-theme="light"] .price-update-table .percentage-ok {
+  color: #2e8b6e;
+}
+
+[data-theme="light"] .tooltip-row.original {
+  color: #c53030;
+}
+
+[data-theme="light"] .tooltip-row.current {
+  color: #2e8b6e;
+}
+
+[data-theme="light"] .virtual-td.search-match {
+  background: rgba(46, 139, 110, 0.15);
+  color: #2e8b6e;
+}
+
+[data-theme="light"] .virtual-td.highlighted.search-match {
+  background: linear-gradient(135deg, var(--highlight) 50%, rgba(46, 139, 110, 0.15) 50%);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #d4c9b8;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #b8a990;
+}
+
 /* App layout */
 .app {
   display: flex;
@@ -72,7 +125,7 @@
 button {
   padding: 6px 12px;
   background: var(--accent);
-  color: white;
+  color: var(--btn-accent-text, white);
   border: none;
   border-radius: 3px;
   font-size: 12px;
@@ -92,6 +145,7 @@ button:disabled {
 button.secondary {
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 button.secondary:hover:not(:disabled) {
@@ -245,6 +299,7 @@ button.secondary:hover:not(:disabled) {
   justify-content: center;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .zoom-btn:hover:not(:disabled) {
@@ -765,7 +820,7 @@ button.secondary:hover:not(:disabled) {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--modal-overlay, rgba(0, 0, 0, 0.7));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -781,7 +836,7 @@ button.secondary:hover:not(:disabled) {
   width: 90%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--modal-shadow, 0 8px 32px rgba(0, 0, 0, 0.4));
 }
 
 .modal-content.modal-prompt {
@@ -1008,7 +1063,7 @@ button.primary:hover:not(:disabled) {
   padding: 6px 8px;
   font-size: 11px;
   font-family: "Consolas", "Monaco", monospace;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--tooltip-shadow, 0 4px 12px rgba(0, 0, 0, 0.3));
   max-width: 400px;
 }
 

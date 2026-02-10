@@ -57,10 +57,21 @@ export function OperationsTab({
           }))
         : [];
 
+      // Use duplicateNameItems from backend
+      const duplicateNameItems = operations.detectDuplicateNames
+        ? result.duplicateNameItems.map((item) => ({
+            rowIdx: item.rowIdx,
+            sifra: item.sifra,
+            naziv: item.naziv,
+            dbSifra: item.dbSifra,
+          }))
+        : [];
+
       onPreviewUpdate(
         result.table,
         result.changedCells,
         emptyBarcodeItems,
+        duplicateNameItems,
         priceItems,
         result.exportStr,
         operations.autoUpdateBarKod,
@@ -97,6 +108,7 @@ export function OperationsTab({
     { key: "formatColAndMpPrice2Dec", labelKey: "formatColAndMpPrice2Dec", requiresSifrarnik: false },
     { key: "removeDuplicateBarcodes", labelKey: "removeDuplicateBarcodes", requiresSifrarnik: false },
     { key: "autoUpdateBarKod", labelKey: "autoUpdateBarKod", requiresSifrarnik: true },
+    { key: "detectDuplicateNames", labelKey: "detectDuplicateNames", requiresSifrarnik: true },
     { key: "swapCommasToDots", labelKey: "swapCommasToDots", requiresSifrarnik: false },
     { key: "autoUpdatePrice", labelKey: "autoUpdatePrice", requiresSifrarnik: false },
   ];

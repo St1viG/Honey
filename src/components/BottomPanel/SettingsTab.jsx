@@ -11,7 +11,7 @@ export function SettingsTab({
   onPriceThresholdChange,
   onSaveSettings,
 }) {
-  const { t, language, changeLanguage } = useLanguage();
+  const { t, language, changeLanguage, theme, changeTheme } = useLanguage();
 
   const formatTimestamp = (isoString) => {
     if (!isoString) return t.unknown;
@@ -25,6 +25,7 @@ export function SettingsTab({
     { key: "formatColAndMpPrice2Dec", labelKey: "formatColAndMpPrice2Dec" },
     { key: "removeDuplicateBarcodes", labelKey: "removeDuplicateBarcodes" },
     { key: "autoUpdateBarKod", labelKey: "autoUpdateBarKod" },
+    { key: "detectDuplicateNames", labelKey: "detectDuplicateNames" },
     { key: "swapCommasToDots", labelKey: "swapCommasToDots" },
     { key: "autoUpdatePrice", labelKey: "autoUpdatePrice" },
   ];
@@ -98,6 +99,25 @@ export function SettingsTab({
           />
           <span>%</span>
           <button onClick={handleSaveThreshold}>{t.save}</button>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <h3>{t.theme}</h3>
+        <p className="settings-description">{t.themeDesc}</p>
+        <div className="language-selector">
+          <button
+            className={`lang-btn ${theme === "dark" ? "active" : ""}`}
+            onClick={() => changeTheme("dark")}
+          >
+            {t.dark}
+          </button>
+          <button
+            className={`lang-btn ${theme === "light" ? "active" : ""}`}
+            onClick={() => changeTheme("light")}
+          >
+            {t.light}
+          </button>
         </div>
       </div>
 

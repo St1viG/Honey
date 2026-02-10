@@ -340,7 +340,6 @@ export const TableView = forwardRef(function TableView(
                         onMouseLeave={
                           highlighted ? handleCellMouseLeave : undefined
                         }
-                        title={value}
                       >
                         {value}
                       </div>
