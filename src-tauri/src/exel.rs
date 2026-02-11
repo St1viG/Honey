@@ -2,6 +2,7 @@ use std::{fs::File};
 use std::io::Write;
 
 use calamine::*;
+use unicode_normalization::UnicodeNormalization;
 use crate::types::{Table,Row};
 
 
@@ -35,23 +36,24 @@ pub fn read_exel(path: &str)-> Result<Table, String>{
 }
 
 fn cell_to_string(cell: &Data) -> String {
-    match cell {
-        Data::Empty => String::new(),
-        Data::String(s) => s.clone().trim_end().to_owned(),
-        Data::Int(i) => i.to_string(),
+    let raw = match cell {
+        Data::Empty => return String::new(),
+        Data::String(s) => s.clone(),
+        Data::Int(i) => return i.to_string(),
         Data::Float(f) => {
-            if (f.round() - f).abs() < 0.0001 {
+            return if (f.round() - f).abs() < 0.0001 {
                 format!("{}", f.round() as i64)
             } else {
                 format!("{}", f)
             }
         },
-        Data::Bool(b) => b.to_string(),
-        Data::DateTime(dt) => format!("{}", dt),
-        Data::Error(e) => format!("{:?}", e),
+        Data::Bool(b) => return b.to_string(),
+        Data::DateTime(dt) => return format!("{}", dt),
+        Data::Error(e) => return format!("{:?}", e),
         Data::DateTimeIso(s) => s.clone(),
         Data::DurationIso(s) => s.clone(),
-    }
+    };
+    raw.nfc().collect::<String>().trim_end().to_owned()
 }
 
 

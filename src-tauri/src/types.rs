@@ -43,8 +43,7 @@ impl Table{
         for row in &mut self.rows{
             if let Some(val) = row.get_mut("Ukupna cena") {
                 if let Ok(n) = val.parse::<f64>() {
-                    let excel_rounded = (n * 10000.0).round() / 10000.0;
-                    *val = format!("{:.4}", excel_rounded);
+                    *val = format!("{:.4}", n);
                 }
             }
 
@@ -64,8 +63,7 @@ impl Table{
             // }
             if let Some(val) = row.get_mut("Cena MP") {
                 if let Ok(n) = val.parse::<f64>() {
-                    let excel_rounded = (n * 100.0).round() / 100.0;
-                    *val = format!("{:.2}", excel_rounded);
+                    *val = format!("{:.2}", n);
                 }
             }
 

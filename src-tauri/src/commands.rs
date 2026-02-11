@@ -108,8 +108,17 @@ pub fn apply_operations(table: Table, operations: Operations, price_threshold: f
 pub fn export_file(path: &str, state: State<AppState>) {
     let transformed = state.transformed.lock().unwrap();
     if let Some(ref data) = *transformed {
-        let _ = fs::write(path, table_to_str(&data).unwrap());
+        let utf8 = table_to_str(&data).unwrap();
+        let (encoded, _, _) = encoding_rs::WINDOWS_1250.encode(&utf8);
+        let _ = fs::write(path, &*encoded);
     }
+}
+
+#[tauri::command]
+pub fn update_transformed(table: Table, state: State<AppState>) -> Result<String, String> {
+    let export_str = table_to_str(&table)?;
+    *state.transformed.lock().unwrap() = Some(table);
+    Ok(export_str)
 }
 
 #[tauri::command]
