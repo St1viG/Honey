@@ -138,8 +138,12 @@ function App() {
         if (stored) {
           const settings = JSON.parse(stored);
           if (settings.defaultOperations) {
-            setDefaultOperations(settings.defaultOperations);
-            setOperations(settings.defaultOperations);
+            const merged = {
+              ...defaultOperations,
+              ...settings.defaultOperations,
+            };
+            setDefaultOperations(merged);
+            setOperations(merged);
           }
           if (settings.priceThreshold !== undefined) {
             setPriceThreshold(settings.priceThreshold);
@@ -156,6 +160,14 @@ function App() {
   const addLog = (message) => {
     const timestamp = new Date().toLocaleTimeString();
     setLogs((prev) => [...prev, `[${timestamp}] ${message}`]);
+  };
+
+  const finalizePreview = async (table, changed) => {
+    const exportStr = await invoke("update_transformed", { table });
+    setPreview(table);
+    setChangedCells(changed || []);
+    setExportText(exportStr);
+    setPendingResult(null);
   };
 
   const handleInvoiceLoad = (table, filename) => {
@@ -177,17 +189,36 @@ function App() {
     setSifrarnikTimestamp(timestamp);
 
     try {
-      await invoke("save_sifrarnik", { data: JSON.stringify({ table, name: filename, timestamp }) });
-      addLog(`Loaded and cached database: ${filename} (${table.rows.length} items)`);
+      await invoke("save_sifrarnik", {
+        data: JSON.stringify({ table, name: filename, timestamp }),
+      });
+      addLog(
+        `Loaded and cached database: ${filename} (${table.rows.length} items)`,
+      );
     } catch (e) {
-      addLog(`Loaded database: ${table.rows.length} items (cache failed: ${e})`);
+      addLog(
+        `Loaded database: ${table.rows.length} items (cache failed: ${e})`,
+      );
     }
   };
 
   // Called when operations complete - may trigger barcode, name, or price modal
-  const handlePreviewUpdate = (table, changed, emptyItems, nameItems, priceItems, exportStr, autoUpdateBarcodes) => {
+  const handlePreviewUpdate = (
+    table,
+    changed,
+    emptyItems,
+    nameItems,
+    priceItems,
+    exportStr,
+    autoUpdateBarcodes,
+  ) => {
     // If auto-update is enabled and there are empty items, try to fetch from sifrarnik
-    if (autoUpdateBarcodes && emptyItems && emptyItems.length > 0 && sifrarnik) {
+    if (
+      autoUpdateBarcodes &&
+      emptyItems &&
+      emptyItems.length > 0 &&
+      sifrarnik
+    ) {
       // Static column names for sifrarnik
       const barcodeColumn = "barkod";
       const sifraColumn = "sifra";
@@ -197,7 +228,7 @@ function App() {
 
       emptyItems.forEach((item) => {
         const sifrarnikRow = sifrarnik.rows.find(
-          (r) => r[sifraColumn] === item.sifra
+          (r) => r[sifraColumn] === item.sifra,
         );
         if (sifrarnikRow && sifrarnikRow[barcodeColumn]) {
           updatedTable.rows[item.rowIdx] = {
@@ -229,33 +260,31 @@ function App() {
     // Modal chain: barcodes → duplicate names → prices
     if (emptyItems && emptyItems.length > 0 && !autoUpdateBarcodes) {
       setEmptyBarcodeItems(emptyItems);
-      setPendingResult({ table, changed, exportStr });
+      setPendingResult({ table, changed });
       setShowBarcodeModal(true);
       return;
     }
 
     if (nameItems && nameItems.length > 0) {
-      setPendingResult({ table, changed, exportStr });
+      setPendingResult({ table, changed });
       setShowNameModal(true);
       return;
     }
 
     if (priceItems && priceItems.length > 0) {
-      setPendingResult({ table, changed, exportStr });
+      setPendingResult({ table, changed });
       setShowPriceModal(true);
       return;
     }
 
     // Normal flow
-    setExportText(exportStr);
-    setPreview(table);
-    setChangedCells(changed || []);
+    finalizePreview(table, changed);
   };
 
   const handleBarcodeModalSubmit = (barcodeInputs) => {
     if (!pendingResult) return;
 
-    const { table, changed, exportStr } = pendingResult;
+    const { table, changed } = pendingResult;
     const updatedTable = { ...table, rows: [...table.rows] };
     const newChangedCells = [...(changed || [])];
     let updatedCount = 0;
@@ -284,16 +313,13 @@ function App() {
 
     // Chain: next check duplicate names, then prices
     if (duplicateNameItems && duplicateNameItems.length > 0) {
-      setPendingResult({ table: updatedTable, changed: newChangedCells, exportStr });
+      setPendingResult({ table: updatedTable, changed: newChangedCells });
       setShowNameModal(true);
     } else if (priceUpdateItems && priceUpdateItems.length > 0) {
-      setPendingResult({ table: updatedTable, changed: newChangedCells, exportStr });
+      setPendingResult({ table: updatedTable, changed: newChangedCells });
       setShowPriceModal(true);
     } else {
-      setPreview(updatedTable);
-      setChangedCells(newChangedCells);
-      setExportText(exportStr);
-      setPendingResult(null);
+      finalizePreview(updatedTable, newChangedCells);
     }
   };
 
@@ -304,7 +330,7 @@ function App() {
   const handleBarcodeModalSkip = () => {
     if (!pendingResult) return;
 
-    const { table, changed, exportStr } = pendingResult;
+    const { table, changed } = pendingResult;
     addLog("Skipped barcode entry");
     setShowBarcodeModal(false);
 
@@ -314,10 +340,7 @@ function App() {
     } else if (priceUpdateItems && priceUpdateItems.length > 0) {
       setShowPriceModal(true);
     } else {
-      setPreview(table);
-      setChangedCells(changed || []);
-      setExportText(exportStr);
-      setPendingResult(null);
+      finalizePreview(table, changed);
     }
   };
 
@@ -325,7 +348,7 @@ function App() {
   const handleNameModalSubmit = (nameInputs) => {
     if (!pendingResult) return;
 
-    const { table, changed, exportStr } = pendingResult;
+    const { table, changed } = pendingResult;
     const updatedTable = { ...table, rows: [...table.rows] };
     const newChangedCells = [...(changed || [])];
     let updatedCount = 0;
@@ -347,13 +370,10 @@ function App() {
 
     // Chain: next check prices
     if (priceUpdateItems && priceUpdateItems.length > 0) {
-      setPendingResult({ table: updatedTable, changed: newChangedCells, exportStr });
+      setPendingResult({ table: updatedTable, changed: newChangedCells });
       setShowPriceModal(true);
     } else {
-      setPreview(updatedTable);
-      setChangedCells(newChangedCells);
-      setExportText(exportStr);
-      setPendingResult(null);
+      finalizePreview(updatedTable, newChangedCells);
     }
   };
 
@@ -368,11 +388,8 @@ function App() {
     if (priceUpdateItems && priceUpdateItems.length > 0) {
       setShowPriceModal(true);
     } else {
-      const { table, changed, exportStr } = pendingResult;
-      setPreview(table);
-      setChangedCells(changed || []);
-      setExportText(exportStr);
-      setPendingResult(null);
+      const { table, changed } = pendingResult;
+      finalizePreview(table, changed);
     }
   };
 
@@ -380,7 +397,7 @@ function App() {
   const handlePriceModalSubmit = (priceInputs) => {
     if (!pendingResult) return;
 
-    const { table, changed, exportStr } = pendingResult;
+    const { table, changed } = pendingResult;
     const updatedTable = { ...table, rows: [...table.rows] };
     const newChangedCells = [...(changed || [])];
     let updatedCount = 0;
@@ -399,25 +416,19 @@ function App() {
     });
 
     addLog(`Applied ${updatedCount} price updates manually`);
-    setPreview(updatedTable);
-    setChangedCells(newChangedCells);
-    setExportText(exportStr);
     setShowPriceModal(false);
-    setPendingResult(null);
     setPriceUpdateItems([]);
+    finalizePreview(updatedTable, newChangedCells);
   };
 
   const handlePriceModalSkip = () => {
-    if (pendingResult) {
-      const { table, changed, exportStr } = pendingResult;
-      setPreview(table);
-      setChangedCells(changed || []);
-      setExportText(exportStr);
-    }
     addLog("Skipped price updates");
     setShowPriceModal(false);
-    setPendingResult(null);
     setPriceUpdateItems([]);
+    if (pendingResult) {
+      const { table, changed } = pendingResult;
+      finalizePreview(table, changed);
+    }
   };
 
   const saveSettings = async () => {
@@ -548,7 +559,9 @@ function App() {
         onSubmit={handleBarcodeModalSubmit}
         onSkip={handleBarcodeModalSkip}
         onClose={() => setShowBarcodeModal(false)}
-        previousBarcodes={invoiceFilename ? cachedBarcodes[invoiceFilename] : null}
+        previousBarcodes={
+          invoiceFilename ? cachedBarcodes[invoiceFilename] : null
+        }
         invoiceFilename={invoiceFilename}
         onUsePrevious={handleUsePreviousBarcodes}
       />
